@@ -51,11 +51,20 @@ export function OnboardingWizard() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">몇 가지만 알려주세요</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          입력하신 정보를 바탕으로 지금 신청 가능한 기회를 찾아드려요.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">몇 가지만 알려주세요</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            입력하신 정보를 바탕으로 지금 신청 가능한 기회를 찾아드려요.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={submit}
+          className="shrink-0 text-xs font-medium text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline dark:text-slate-500 dark:hover:text-slate-300"
+        >
+          건너뛰고 시작하기
+        </button>
       </div>
 
       <OnboardingStepper currentStep={step} steps={STEP_LABELS} />
