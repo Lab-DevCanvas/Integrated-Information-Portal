@@ -10,6 +10,7 @@ import { Wordmark } from "@/components/layout/Wordmark";
 const NAV_ITEMS = [
   { href: "/", label: "홈" },
   { href: "/categories", label: "카테고리" },
+  { href: "/calendar", label: "캘린더" },
   { href: "/search", label: "AI 검색" },
 ] as const;
 

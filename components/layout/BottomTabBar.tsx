@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Sparkles } from "lucide-react";
+import { Calendar, Home, LayoutGrid, Sparkles } from "lucide-react";
 
 const TAB_ITEMS = [
   { href: "/", label: "홈", icon: Home },
   { href: "/categories", label: "카테고리", icon: LayoutGrid },
+  { href: "/calendar", label: "캘린더", icon: Calendar },
   { href: "/search", label: "AI 검색", icon: Sparkles },
 ] as const;
 
