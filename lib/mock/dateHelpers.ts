@@ -33,6 +33,13 @@ export function formatDate(isoDate: string): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Local-calendar-day key (e.g. "2026-08-24") for grouping — accepts a Date directly so
+ * calendar grid cells (built from local Date objects) never have to round-trip through ISO/UTC. */
+export function dateKey(date: string | Date): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function daysSince(isoDate: string): number {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
