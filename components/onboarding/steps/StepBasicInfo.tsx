@@ -2,11 +2,10 @@
 
 import { EDUCATION_STATUSES, REGIONS } from "@/lib/constants";
 import { Chip } from "@/components/ui/Chip";
-import { AvatarUpload } from "@/components/profile/AvatarUpload";
 import type { UserProfile } from "@/lib/types";
 
 interface Props {
-  draft: Pick<UserProfile, "avatarUrl" | "age" | "region" | "educationStatus">;
+  draft: Pick<UserProfile, "age" | "region" | "educationStatus">;
   onChange: (patch: Partial<UserProfile>) => void;
 }
 
@@ -15,11 +14,6 @@ const PROFILE_REGIONS = REGIONS.filter((r) => r !== "전국");
 export function StepBasicInfo({ draft, onChange }: Props) {
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-center gap-2">
-        <AvatarUpload value={draft.avatarUrl} onChange={(avatarUrl) => onChange({ avatarUrl })} size="lg" />
-        <p className="text-xs text-slate-400 dark:text-slate-500">프로필 이미지를 등록해보세요 (선택)</p>
-      </div>
-
       <div>
         <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">나이</label>
         <div className="flex items-center gap-2">
