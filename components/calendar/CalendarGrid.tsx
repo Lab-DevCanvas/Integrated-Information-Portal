@@ -4,13 +4,18 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { buildCalendarEventsByDate } from "@/lib/calendar";
+import { OPPORTUNITY_TYPE_LABELS } from "@/lib/constants";
 import { dateKey } from "@/lib/mock/dateHelpers";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import type { OpportunityType } from "@/lib/types";
 import { DayEventsModal } from "./DayEventsModal";
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 const MAX_INLINE = 5;
 const GRID_CELLS = 42;
+const OPPORTUNITY_TYPES = Object.keys(OPPORTUNITY_TYPE_LABELS) as OpportunityType[];
 
 function buildMonthCells(year: number, month: number): Date[] {
   const firstOfMonth = new Date(year, month, 1);
@@ -31,8 +36,15 @@ export function CalendarGrid() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [modalDate, setModalDate] = useState<Date | null>(null);
+  const [typeFilter, setTypeFilter] = useState<OpportunityType[]>([]);
 
-  const eventsByDate = useMemo(() => buildCalendarEventsByDate(), []);
+  const allOpportunities = useAllOpportunities();
+  const filteredOpportunities = useMemo(
+    () =>
+      typeFilter.length === 0 ? allOpportunities : allOpportunities.filter((o) => typeFilter.includes(o.opportunityType)),
+    [allOpportunities, typeFilter],
+  );
+  const eventsByDate = useMemo(() => buildCalendarEventsByDate(filteredOpportunities), [filteredOpportunities]);
   const cells = useMemo(() => buildMonthCells(viewYear, viewMonth), [viewYear, viewMonth]);
   const todayKey = dateKey(today);
 
@@ -45,6 +57,10 @@ export function CalendarGrid() {
   function goToday() {
     setViewYear(today.getFullYear());
     setViewMonth(today.getMonth());
+  }
+
+  function toggleType(id: OpportunityType) {
+    setTypeFilter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   const modalEvents = modalDate ? (eventsByDate.get(dateKey(modalDate)) ?? []) : [];
@@ -76,6 +92,17 @@ export function CalendarGrid() {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Chip selected={typeFilter.length === 0} onClick={() => setTypeFilter([])}>
+          전체
+        </Chip>
+        {OPPORTUNITY_TYPES.map((t) => (
+          <Chip key={t} selected={typeFilter.includes(t)} onClick={() => toggleType(t)}>
+            {OPPORTUNITY_TYPE_LABELS[t]}
+          </Chip>
+        ))}
       </div>
 
       <div className="mb-3 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
