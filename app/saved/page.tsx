@@ -3,17 +3,18 @@
 import { Bookmark } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { OPPORTUNITIES } from "@/lib/mock/opportunities";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
 
 export default function SavedPage() {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
+  const allOpportunities = useAllOpportunities();
 
   if (!profile) return null;
 
-  const items = OPPORTUNITIES.filter((o) => savedIds.includes(o.id)).map((opportunity) => ({
+  const items = allOpportunities.filter((o) => savedIds.includes(o.id)).map((opportunity) => ({
     opportunity,
     score: computeScore(profile, opportunity, savedIds),
   }));

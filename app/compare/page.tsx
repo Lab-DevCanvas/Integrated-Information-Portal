@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CompareRecommendationBox } from "@/components/compare/CompareRecommendationBox";
 import { CompareTable } from "@/components/compare/CompareTable";
 import { buildComparisonSentence } from "@/lib/compare/recommend";
-import { getOpportunityById } from "@/lib/mock/opportunities";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
 
@@ -15,11 +15,12 @@ export default function ComparePage() {
   const savedIds = useAppStore((s) => s.savedIds);
   const compareIds = useAppStore((s) => s.compareIds);
   const clearCompare = useAppStore((s) => s.clearCompare);
+  const allOpportunities = useAllOpportunities();
 
   if (!profile) return null;
 
   const entries = compareIds
-    .map((id) => getOpportunityById(id))
+    .map((id) => allOpportunities.find((o) => o.id === id))
     .filter((o): o is NonNullable<typeof o> => Boolean(o))
     .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }));
 

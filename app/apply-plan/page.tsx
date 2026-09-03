@@ -4,7 +4,7 @@ import { ClipboardCheck } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { daysUntil } from "@/lib/mock/dateHelpers";
-import { OPPORTUNITIES } from "@/lib/mock/opportunities";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
 
@@ -12,10 +12,12 @@ export default function ApplyPlanPage() {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
   const applyPlanIds = useAppStore((s) => s.applyPlanIds);
+  const allOpportunities = useAllOpportunities();
 
   if (!profile) return null;
 
-  const items = OPPORTUNITIES.filter((o) => applyPlanIds.includes(o.id))
+  const items = allOpportunities
+    .filter((o) => applyPlanIds.includes(o.id))
     .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }))
     .sort((a, b) => {
       const aAlways = a.opportunity.isAlwaysOpen ? 1 : 0;

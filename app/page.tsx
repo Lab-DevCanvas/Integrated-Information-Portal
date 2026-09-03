@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { Bell, ChevronRight } from "lucide-react";
 import { useAppStore } from "@/lib/store/useAppStore";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { useScoredOpportunities } from "@/lib/hooks/useScoredOpportunities";
 import { getTodaysOpportunities } from "@/lib/notifications";
+import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { NotificationFeed } from "@/components/dashboard/NotificationFeed";
 import { RecommendationList } from "@/components/dashboard/RecommendationList";
 import { Card } from "@/components/ui/Card";
@@ -12,20 +14,16 @@ import { Card } from "@/components/ui/Card";
 export default function DashboardPage() {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
+  const allOpportunities = useAllOpportunities();
   const scored = useScoredOpportunities();
 
   if (!profile) return null;
 
-  const newEntries = getTodaysOpportunities(profile, savedIds).slice(0, 6);
+  const newEntries = getTodaysOpportunities(profile, savedIds, allOpportunities).slice(0, 6);
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {profile.region} · {profile.age}세 · {profile.employmentStatus}
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">오늘 당신에게 맞는 기회</h1>
-      </div>
+      <DashboardHero profile={profile} scored={scored} newTodayCount={newEntries.length} />
 
       {newEntries.length > 0 && (
         <Card className="p-4 sm:p-5">
@@ -47,7 +45,7 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      <div>
+      <div id="recommendations" className="scroll-mt-20">
         <h2 className="mb-3 text-lg font-bold text-slate-900 dark:text-slate-50">추천 기회 {scored.length}건</h2>
         <RecommendationList items={scored} />
       </div>

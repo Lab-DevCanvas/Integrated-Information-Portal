@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ChatConversation, ChatMessage, UserProfile } from "../types";
+import type { ChatConversation, ChatMessage, Opportunity, UserProfile } from "../types";
 import { COMPARE_MAX } from "../constants";
 import { deriveConversationTitle, generateAssistantReply } from "../chat/reply";
+import { fetchCrawledOpportunities } from "../api/fetchCrawledOpportunities";
+import { OPPORTUNITIES } from "../mock/opportunities";
 
 type Theme = "light" | "dark";
 
@@ -29,6 +31,12 @@ interface AppState {
   startNewConversation: () => void;
   setActiveConversation: (id: string) => void;
   sendMessage: (text: string) => void;
+
+  /** Live data from the crawling backend (docs/crawling-integration.md) — additive to OPPORTUNITIES,
+   * never persisted to localStorage since it's cheap to refetch and would otherwise go stale. */
+  crawledOpportunities: Opportunity[];
+  crawledStatus: "idle" | "loading" | "ready" | "error";
+  loadCrawledOpportunities: () => Promise<void>;
 
   theme: Theme;
   /** false until the user has explicitly toggled — while false, ThemeEffect keeps following the OS preference */
@@ -103,7 +111,8 @@ export const useAppStore = create<AppState>()(
           conversations = [newConversation, ...conversations].slice(0, MAX_CONVERSATIONS);
         }
 
-        const reply = generateAssistantReply(trimmed, state.profile, state.savedIds);
+        const allOpportunities = [...OPPORTUNITIES, ...state.crawledOpportunities];
+        const reply = generateAssistantReply(trimmed, state.profile, state.savedIds, allOpportunities);
         const assistantMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -119,6 +128,20 @@ export const useAppStore = create<AppState>()(
         );
 
         set({ conversations, activeConversationId: conversationId });
+      },
+
+      crawledOpportunities: [],
+      crawledStatus: "idle",
+      loadCrawledOpportunities: async () => {
+        if (get().crawledStatus === "loading" || get().crawledStatus === "ready") return;
+        set({ crawledStatus: "loading" });
+        try {
+          const items = await fetchCrawledOpportunities();
+          set({ crawledOpportunities: items, crawledStatus: "ready" });
+        } catch {
+          // Best-effort: the dashboard keeps working on curated mock data alone.
+          set({ crawledStatus: "error" });
+        }
       },
 
       theme: "light",

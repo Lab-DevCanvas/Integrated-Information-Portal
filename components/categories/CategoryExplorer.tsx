@@ -8,8 +8,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { CATEGORIES } from "@/lib/categories";
 import { EXPERIENCE_LEVELS, OPPORTUNITY_TYPE_LABELS, REGIONS } from "@/lib/constants";
 import { daysUntil } from "@/lib/mock/dateHelpers";
-import { OPPORTUNITIES } from "@/lib/mock/opportunities";
 import { computeScore } from "@/lib/scoring/score";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { CategoryId, ExperienceLevel, OpportunityType, RegionCode } from "@/lib/types";
 
@@ -32,6 +32,7 @@ interface Props {
 export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
+  const allOpportunities = useAllOpportunities();
 
   const [categoryIds, setCategoryIds] = useState<CategoryId[]>(initialCategoryIds);
   const [typeIds, setTypeIds] = useState<OpportunityType[]>([]);
@@ -79,7 +80,7 @@ export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
     if (!profile) return [];
     const kw = keyword.trim().toLowerCase();
 
-    const base = OPPORTUNITIES.filter((o) => {
+    const base = allOpportunities.filter((o) => {
       if (categoryIds.length > 0 && !categoryIds.includes(o.categoryId)) return false;
       if (typeIds.length > 0 && !typeIds.includes(o.opportunityType)) return false;
       if (regions.length > 0 && !o.region.includes("전국") && !regions.some((r) => o.region.includes(r))) return false;
@@ -134,7 +135,19 @@ export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
     }
 
     return scored;
-  }, [profile, savedIds, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, eligibleOnly, keyword, sortMode]);
+  }, [
+    profile,
+    savedIds,
+    allOpportunities,
+    categoryIds,
+    typeIds,
+    regions,
+    experienceLevels,
+    deadlineWindow,
+    eligibleOnly,
+    keyword,
+    sortMode,
+  ]);
 
   if (!profile) return null;
 

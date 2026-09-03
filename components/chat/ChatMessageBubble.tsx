@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { getOpportunityById } from "@/lib/mock/opportunities";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { ChatMessage } from "@/lib/types";
@@ -10,6 +10,7 @@ import { ChatResultCard } from "./ChatResultCard";
 export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
+  const allOpportunities = useAllOpportunities();
 
   if (message.role === "user") {
     return (
@@ -23,7 +24,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
 
   const results = profile
     ? (message.resultIds ?? [])
-        .map((id) => getOpportunityById(id))
+        .map((id) => allOpportunities.find((o) => o.id === id))
         .filter((o): o is NonNullable<typeof o> => Boolean(o))
         .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }))
     : [];

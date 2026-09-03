@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import { NotificationFeed } from "@/components/dashboard/NotificationFeed";
 import { getNewOpportunities } from "@/lib/notifications";
-import { OPPORTUNITIES } from "@/lib/mock/opportunities";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { Avatar } from "./Avatar";
 import { AvatarUpload } from "./AvatarUpload";
@@ -19,6 +19,7 @@ export function ProfileMenu() {
   const savedIds = useAppStore((s) => s.savedIds);
   const applyPlanIds = useAppStore((s) => s.applyPlanIds);
   const updateProfile = useAppStore((s) => s.updateProfile);
+  const allOpportunities = useAllOpportunities();
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("알림");
@@ -41,9 +42,9 @@ export function ProfileMenu() {
 
   if (!profile) return null;
 
-  const newEntries = getNewOpportunities(profile, savedIds);
-  const savedItems = OPPORTUNITIES.filter((o) => savedIds.includes(o.id));
-  const applyPlanItems = OPPORTUNITIES.filter((o) => applyPlanIds.includes(o.id));
+  const newEntries = getNewOpportunities(profile, savedIds, allOpportunities);
+  const savedItems = allOpportunities.filter((o) => savedIds.includes(o.id));
+  const applyPlanItems = allOpportunities.filter((o) => applyPlanIds.includes(o.id));
 
   const tabCount: Record<Tab, number> = {
     알림: newEntries.length,

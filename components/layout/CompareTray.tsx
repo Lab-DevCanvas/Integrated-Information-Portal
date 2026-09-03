@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { Scale } from "lucide-react";
 import { useAppStore } from "@/lib/store/useAppStore";
-import { OPPORTUNITIES } from "@/lib/mock/opportunities";
+import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { COMPARE_MAX } from "@/lib/constants";
 
 export function CompareTray() {
   const compareIds = useAppStore((s) => s.compareIds);
   const clearCompare = useAppStore((s) => s.clearCompare);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
+  const allOpportunities = useAllOpportunities();
 
   if (!hasHydrated || compareIds.length === 0) return null;
 
   const titles = compareIds
-    .map((id) => OPPORTUNITIES.find((o) => o.id === id)?.title)
+    .map((id) => allOpportunities.find((o) => o.id === id)?.title)
     .filter((t): t is string => Boolean(t));
 
   return (

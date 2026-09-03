@@ -2,7 +2,7 @@ import { buildComparisonSentence } from "../compare/recommend";
 import { OPPORTUNITIES } from "../mock/opportunities";
 import { filterAndSortByIntent } from "../search/applyIntent";
 import { parseQuery } from "../search/parser";
-import type { ParsedIntent, UserProfile } from "../types";
+import type { Opportunity, ParsedIntent, UserProfile } from "../types";
 
 const COMPARE_KEYWORDS = /비교|어떤\s*게\s*(나을|좋을)|뭐가\s*나을/;
 const PLAN_KEYWORDS = /계획|우선순위|뭐부터|먼저/;
@@ -16,9 +16,14 @@ export interface ChatReply {
 const MAX_SHOWN = 5;
 const MAX_COMPARED = 4;
 
-export function generateAssistantReply(message: string, profile: UserProfile, savedIds: string[]): ChatReply {
+export function generateAssistantReply(
+  message: string,
+  profile: UserProfile,
+  savedIds: string[],
+  opportunities: Opportunity[] = OPPORTUNITIES,
+): ChatReply {
   const intent = parseQuery(message);
-  const results = filterAndSortByIntent(intent, OPPORTUNITIES, profile, savedIds);
+  const results = filterAndSortByIntent(intent, opportunities, profile, savedIds);
   const top = results.slice(0, MAX_SHOWN);
 
   if (top.length === 0) {
