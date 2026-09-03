@@ -157,7 +157,7 @@ export function CalendarGrid() {
                         key={ev.id}
                         href={`/opportunities/${ev.opportunityId}`}
                         title={ev.title}
-                        className={`block truncate rounded px-1 py-0.5 text-[10px] font-medium hover:opacity-80 ${
+                        className={`block truncate rounded px-1 py-[3px] text-[11px] font-medium hover:opacity-80 ${
                           ev.type === "start"
                             ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400"
                             : "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
@@ -170,7 +170,7 @@ export function CalendarGrid() {
                       <button
                         type="button"
                         onClick={() => setModalDate(d)}
-                        className="block w-full truncate rounded px-1 py-0.5 text-left text-[10px] font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                        className="block w-full truncate rounded px-1 py-[3px] text-left text-[11px] font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                       >
                         +{overflow}개 더보기
                       </button>
