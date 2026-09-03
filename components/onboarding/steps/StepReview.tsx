@@ -18,6 +18,7 @@ export function StepReview({ draft }: Props) {
     <div className="space-y-4">
       <p className="text-sm text-slate-500 dark:text-slate-400">입력하신 정보로 나에게 맞는 기회를 찾아드릴게요.</p>
       <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <Row label="이름" value={draft.name?.trim() ? draft.name : "미입력"} />
         <Row label="나이" value={`${draft.age}세`} />
         <Row label="거주 지역" value={draft.region} />
         <Row label="학력/재학상태" value={draft.educationStatus} />

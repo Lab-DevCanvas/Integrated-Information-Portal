@@ -5,7 +5,7 @@ import { Chip } from "@/components/ui/Chip";
 import type { UserProfile } from "@/lib/types";
 
 interface Props {
-  draft: Pick<UserProfile, "age" | "region" | "educationStatus">;
+  draft: Pick<UserProfile, "name" | "age" | "region" | "educationStatus">;
   onChange: (patch: Partial<UserProfile>) => void;
 }
 
@@ -14,6 +14,18 @@ const PROFILE_REGIONS = REGIONS.filter((r) => r !== "전국");
 export function StepBasicInfo({ draft, onChange }: Props) {
   return (
     <div className="space-y-8">
+      <div>
+        <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">이름 (선택)</label>
+        <input
+          type="text"
+          value={draft.name ?? ""}
+          onChange={(e) => onChange({ name: e.target.value || undefined })}
+          placeholder="홍길동"
+          maxLength={20}
+          className="w-full max-w-xs rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+        />
+      </div>
+
       <div>
         <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">나이</label>
         <div className="flex items-center gap-2">
