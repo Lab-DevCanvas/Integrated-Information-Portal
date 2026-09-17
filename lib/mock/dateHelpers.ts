@@ -23,6 +23,7 @@ export function isExpired(isoDate: string): boolean {
 export function formatDday(isoDate: string, isAlwaysOpen?: boolean): string {
   if (isAlwaysOpen) return "상시";
   const d = daysUntil(isoDate);
+  if (!Number.isFinite(d)) return "마감일 미상";
   if (d < 0) return "마감";
   if (d === 0) return "오늘 마감";
   return `D-${d}`;
@@ -30,6 +31,7 @@ export function formatDday(isoDate: string, isAlwaysOpen?: boolean): string {
 
 export function formatDate(isoDate: string): string {
   const d = new Date(isoDate);
+  if (!Number.isFinite(d.getTime())) return "날짜 미상";
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 

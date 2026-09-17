@@ -3,8 +3,9 @@
 import { ClipboardCheck } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { daysUntil } from "@/lib/mock/dateHelpers";
-import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
+import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
 
@@ -13,6 +14,7 @@ export default function ApplyPlanPage() {
   const savedIds = useAppStore((s) => s.savedIds);
   const applyPlanIds = useAppStore((s) => s.applyPlanIds);
   const allOpportunities = useAllOpportunities();
+  const isLoading = useIsLoadingOpportunities();
 
   if (!profile) return null;
 
@@ -36,11 +38,15 @@ export default function ApplyPlanPage() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState
-          icon={ClipboardCheck}
-          title="아직 지원 계획에 담은 기회가 없어요"
-          description="상세 페이지에서 '지원 계획에 추가'를 눌러 지원할 기회를 관리해보세요."
-        />
+        isLoading && applyPlanIds.length > 0 ? (
+          <LoadingState title="지원 계획을 불러오는 중이에요" />
+        ) : (
+          <EmptyState
+            icon={ClipboardCheck}
+            title="아직 지원 계획에 담은 기회가 없어요"
+            description="상세 페이지에서 '지원 계획에 추가'를 눌러 지원할 기회를 관리해보세요."
+          />
+        )
       ) : (
         <div className="space-y-3">
           {items.map(({ opportunity, score }) => (

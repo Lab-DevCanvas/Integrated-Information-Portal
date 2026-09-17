@@ -10,9 +10,12 @@ export function CompareTray() {
   const compareIds = useAppStore((s) => s.compareIds);
   const clearCompare = useAppStore((s) => s.clearCompare);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
-  const allOpportunities = useAllOpportunities();
-
   if (!hasHydrated || compareIds.length === 0) return null;
+  return <ActiveCompareTray compareIds={compareIds} clearCompare={clearCompare} />;
+}
+
+function ActiveCompareTray({ compareIds, clearCompare }: { compareIds: string[]; clearCompare: () => void }) {
+  const allOpportunities = useAllOpportunities();
 
   const titles = compareIds
     .map((id) => allOpportunities.find((o) => o.id === id)?.title)

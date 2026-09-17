@@ -25,7 +25,7 @@ export function makeOpportunity(overrides: Partial<Opportunity> = {}): Opportuni
     title: "테스트 기회",
     organizer: "테스트 기관",
     opportunityType: "contest",
-    categoryId: "career",
+    categoryId: "contest",
     subCategoryId: "contest",
     summary: "테스트용 요약",
     description: "테스트용 상세 설명",

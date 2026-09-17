@@ -14,6 +14,7 @@ export function formatKRW(amount: number): string {
 
 export function formatMonthDay(iso: string): string {
   const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "날짜 미상";
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
@@ -23,6 +24,7 @@ export function formatDateRange(startIso: string, endIso: string): string {
 
 /** Deadlines are conventionally end-of-day, regardless of the time stored on the mock record. */
 export function formatDeadlineDateTime(iso: string): string {
+  if (!iso) return "마감일 미상";
   return `${formatMonthDay(iso)} 23:59`;
 }
 

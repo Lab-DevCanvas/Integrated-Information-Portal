@@ -4,7 +4,8 @@ import type { ChatConversation, ChatMessage, Opportunity, UserProfile } from "..
 import { COMPARE_MAX } from "../constants";
 import { deriveConversationTitle, generateAssistantReply } from "../chat/reply";
 import { fetchCrawledOpportunities } from "../api/fetchCrawledOpportunities";
-import { OPPORTUNITIES } from "../mock/opportunities";
+import { getActivityById } from "../api/crawlingClient";
+import { mapActivityToOpportunity } from "../api/mapActivityToOpportunity";
 
 type Theme = "light" | "dark";
 
@@ -32,11 +33,12 @@ interface AppState {
   setActiveConversation: (id: string) => void;
   sendMessage: (text: string) => void;
 
-  /** Live data from the crawling backend (docs/crawling-integration.md) — additive to OPPORTUNITIES,
-   * never persisted to localStorage since it's cheap to refetch and would otherwise go stale. */
+  /** Live data from the crawling backend (docs/crawling-integration.md) — the app's only opportunity
+   * data source, never persisted to localStorage since it's cheap to refetch and would otherwise go stale. */
   crawledOpportunities: Opportunity[];
   crawledStatus: "idle" | "loading" | "ready" | "error";
-  loadCrawledOpportunities: () => Promise<void>;
+  crawledFailures: string[];
+  loadCrawledOpportunities: (force?: boolean) => Promise<void>;
 
   theme: Theme;
   /** false until the user has explicitly toggled — while false, ThemeEffect keeps following the OS preference */
@@ -111,7 +113,7 @@ export const useAppStore = create<AppState>()(
           conversations = [newConversation, ...conversations].slice(0, MAX_CONVERSATIONS);
         }
 
-        const allOpportunities = [...OPPORTUNITIES, ...state.crawledOpportunities];
+        const allOpportunities = state.crawledOpportunities;
         const reply = generateAssistantReply(trimmed, state.profile, state.savedIds, allOpportunities);
         const assistantMsg: ChatMessage = {
           id: crypto.randomUUID(),
@@ -132,14 +134,29 @@ export const useAppStore = create<AppState>()(
 
       crawledOpportunities: [],
       crawledStatus: "idle",
-      loadCrawledOpportunities: async () => {
-        if (get().crawledStatus === "loading" || get().crawledStatus === "ready") return;
-        set({ crawledStatus: "loading" });
+      crawledFailures: [],
+      loadCrawledOpportunities: async (force = false) => {
+        if (get().crawledStatus === "loading" || (!force && get().crawledStatus === "ready")) return;
+        set({ crawledStatus: "loading", crawledFailures: [] });
         try {
-          const items = await fetchCrawledOpportunities();
-          set({ crawledOpportunities: items, crawledStatus: "ready" });
+          const items = await fetchCrawledOpportunities((crawledFailures) => set({ crawledFailures }));
+          const state = get();
+          const ids = [...new Set([...state.savedIds, ...state.applyPlanIds, ...state.compareIds])].filter((id) => !items.some((item) => item.id === id));
+          // Fetch references outside the dashboard sample, including closed saved items.
+          for (let offset = 0; offset < ids.length; offset += 8) {
+            const batch = await Promise.allSettled(ids.slice(offset, offset + 8).map(getActivityById));
+            for (const result of batch) {
+              if (result.status === "fulfilled" && result.value) items.push(mapActivityToOpportunity(result.value));
+              if (result.status === "rejected") set((s) => ({ crawledFailures: [...new Set([...s.crawledFailures, "저장한 공고"])] }));
+            }
+          }
+          const current = get();
+          const currentReferences = new Set([...current.savedIds, ...current.applyPlanIds, ...current.compareIds]);
+          const merged = new Map(current.crawledOpportunities.filter((item) => currentReferences.has(item.id) && !ids.includes(item.id)).map((item) => [item.id, item]));
+          for (const item of items) merged.set(item.id, item);
+          set({ crawledOpportunities: [...merged.values()], crawledStatus: "ready" });
         } catch {
-          // Best-effort: the dashboard keeps working on curated mock data alone.
+          // Best-effort: consumers fall back to an empty list on failure.
           set({ crawledStatus: "error" });
         }
       },

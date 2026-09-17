@@ -1,7 +1,10 @@
 // --- Taxonomy ---
-export type CategoryId = "employment" | "career" | "money" | "housing" | "startup";
+export type CategoryId = "contest" | "activity" | "job" | "government-policy";
 
 export type SubCategoryId =
+  | "activity"
+  | "job"
+  | "government-policy"
   | "job_fulltime"
   | "job_intern"
   | "contest"
@@ -143,6 +146,10 @@ export interface EligibilityJudgement {
 // --- Opportunity ---
 export interface Opportunity {
   id: string;
+  dataOrigin?: "crawling";
+  lastSeenAt?: string;
+  periodStatus?: string;
+  rawPeriodText?: string;
   title: string;
   organizer: string;
   opportunityType: OpportunityType;
@@ -166,7 +173,7 @@ export interface Opportunity {
   tags: string[];
   teamRequired: boolean;
   portfolioValue: 1 | 2 | 3 | 4 | 5;
-  applyUrl?: string;
+  refUrl?: string;
   viewCount?: number;
   createdAt: string;
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActivityDTO, ActivityListResponse } from "./crawlingClient";
 
 const { listActivitiesMock } = vi.hoisted(() => ({ listActivitiesMock: vi.fn() }));
@@ -34,6 +34,21 @@ function response(items: ActivityDTO[]): ActivityListResponse {
 }
 
 describe("fetchCrawledOpportunities", () => {
+  beforeEach(() => { listActivitiesMock.mockReset(); });
+  it("reports complete failure instead of a successful empty list", async () => {
+    listActivitiesMock.mockRejectedValue(new Error("offline"));
+    await expect(fetchCrawledOpportunities()).rejects.toThrow("모든 카테고리");
+  });
+
+  it("reports the failed categories while retaining successful results", async () => {
+    listActivitiesMock.mockImplementation(async ({ category }: { category: string }) => {
+      if (category === "job") throw new Error("offline");
+      return response([]);
+    });
+    const report = vi.fn();
+    await fetchCrawledOpportunities(report);
+    expect(report).toHaveBeenCalledWith(["job"]);
+  });
   it("requests each of the four categories with a bounded page size", async () => {
     listActivitiesMock.mockResolvedValue(response([]));
 

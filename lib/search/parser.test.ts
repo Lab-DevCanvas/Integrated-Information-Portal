@@ -25,7 +25,7 @@ describe("parseQuery — individual dimensions", () => {
 
   it("extracts a category/type hint", () => {
     const intent = parseQuery("이번 주 공모전 찾아줘");
-    expect(intent.categoryHint).toBe("career");
+    expect(intent.categoryHint).toBe("contest");
     expect(intent.opportunityTypeHint).toBe("contest");
   });
 
@@ -84,7 +84,7 @@ describe("parseQuery — the 5 example queries from the product spec", () => {
     expect(intent.age).toBe(27);
     expect(intent.region).toBe("서울");
     expect(intent.employmentStatus).toBe("무직");
-    expect(intent.categoryHint).toBe("money");
+    expect(intent.categoryHint).toBe("government-policy");
   });
 
   it("'이번달 마감인 기획/PM 관련 공모전 찾아줘'", () => {

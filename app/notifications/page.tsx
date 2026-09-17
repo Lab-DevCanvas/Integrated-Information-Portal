@@ -2,16 +2,19 @@
 
 import { Bell } from "lucide-react";
 import { NotificationFeed } from "@/components/dashboard/NotificationFeed";
+import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { getNewOpportunities } from "@/lib/notifications";
 import { useAppStore } from "@/lib/store/useAppStore";
 
 export default function NotificationsPage() {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
+  const allOpportunities = useAllOpportunities();
+  const isLoading = useIsLoadingOpportunities();
 
   if (!profile) return null;
 
-  const entries = getNewOpportunities(profile, savedIds);
+  const entries = getNewOpportunities(profile, savedIds, allOpportunities);
 
   return (
     <div className="space-y-6">
@@ -22,7 +25,7 @@ export default function NotificationsPage() {
       <p className="text-sm text-slate-500 dark:text-slate-400">
         최근 14일 내 등록되고 프로필과 잘 맞는 기회들을 모았어요.
       </p>
-      <NotificationFeed entries={entries} mode="full" />
+      <NotificationFeed entries={entries} mode="full" isLoading={isLoading} />
     </div>
   );
 }

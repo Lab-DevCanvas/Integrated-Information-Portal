@@ -3,6 +3,10 @@ import type { EligibilityCheckItem, EligibilityJudgement, JudgeStatus, Opportuni
 const INCOME_MARGIN = 10;
 
 export function judgeEligibility(profile: UserProfile, opp: Opportunity): EligibilityJudgement {
+  if (opp.dataOrigin === "crawling") return {
+    overall: "unknown",
+    items: [{ key: "source", label: "지원 자격", status: "unknown", reason: "수집된 공고에 구조화된 자격 조건이 없어 원문 확인이 필요합니다." }],
+  };
   const items: EligibilityCheckItem[] = [];
   const e = opp.eligibility;
 

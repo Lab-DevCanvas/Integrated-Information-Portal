@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bell, ChevronRight } from "lucide-react";
 import { useAppStore } from "@/lib/store/useAppStore";
-import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
+import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { useScoredOpportunities } from "@/lib/hooks/useScoredOpportunities";
 import { getTodaysOpportunities } from "@/lib/notifications";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
@@ -16,10 +16,13 @@ export default function DashboardPage() {
   const savedIds = useAppStore((s) => s.savedIds);
   const allOpportunities = useAllOpportunities();
   const scored = useScoredOpportunities();
+  const isLoading = useIsLoadingOpportunities();
 
   if (!profile) return null;
 
   const newEntries = getTodaysOpportunities(profile, savedIds, allOpportunities).slice(0, 6);
+  const RECOMMENDATION_MIN_SCORE = 70;
+  const recommended = scored.filter((s) => s.score.totalScore >= RECOMMENDATION_MIN_SCORE);
 
   return (
     <div className="space-y-8">
@@ -46,8 +49,8 @@ export default function DashboardPage() {
       )}
 
       <div id="recommendations" className="scroll-mt-20">
-        <h2 className="mb-3 text-lg font-bold text-slate-900 dark:text-slate-50">추천 기회 {scored.length}건</h2>
-        <RecommendationList items={scored} />
+        <h2 className="mb-3 text-lg font-bold text-slate-900 dark:text-slate-50">추천 기회 {recommended.length}건</h2>
+        <RecommendationList items={recommended} isLoading={isLoading} />
       </div>
     </div>
   );

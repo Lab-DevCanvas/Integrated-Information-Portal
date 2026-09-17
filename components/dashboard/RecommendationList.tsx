@@ -5,17 +5,20 @@ import { SearchX } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import type { Opportunity, ScoreResult } from "@/lib/types";
 
 interface Props {
   items: { opportunity: Opportunity; score: ScoreResult }[];
   pageSize?: number;
+  isLoading?: boolean;
 }
 
-export function RecommendationList({ items, pageSize = 8 }: Props) {
+export function RecommendationList({ items, pageSize = 8, isLoading = false }: Props) {
   const [visible, setVisible] = useState(pageSize);
 
   if (items.length === 0) {
+    if (isLoading) return <LoadingState title="추천 기회를 불러오는 중이에요" />;
     return (
       <EmptyState
         icon={SearchX}

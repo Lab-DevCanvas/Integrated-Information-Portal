@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCalendarEventsByDate } from "./calendar";
 import { dateKey } from "./mock/dateHelpers";
-import { OPPORTUNITIES } from "./mock/opportunities";
 import { makeOpportunity } from "./testFixtures";
 
 describe("buildCalendarEventsByDate", () => {
@@ -51,17 +50,5 @@ describe("buildCalendarEventsByDate", () => {
 
     const day = byDate.get(dateKey("2026-03-05T09:00:00.000Z"));
     expect(day?.map((e) => `${e.type}:${e.title}`)).toEqual(["start:Mango", "start:Zebra", "deadline:Apple"]);
-  });
-
-  it("defaults to the real OPPORTUNITIES data set and only references real ids", () => {
-    const byDate = buildCalendarEventsByDate();
-    expect(byDate.size).toBeGreaterThan(0);
-
-    const realIds = new Set(OPPORTUNITIES.map((o) => o.id));
-    for (const events of byDate.values()) {
-      for (const event of events) {
-        expect(realIds.has(event.opportunityId)).toBe(true);
-      }
-    }
   });
 });

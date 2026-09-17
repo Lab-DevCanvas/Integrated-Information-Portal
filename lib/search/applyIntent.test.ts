@@ -18,10 +18,10 @@ describe("filterAndSortByIntent — base filtering", () => {
   });
 
   it("filters by categoryHint and opportunityTypeHint", () => {
-    const contest = makeOpportunity({ id: "contest", categoryId: "career", opportunityType: "contest" });
-    const job = makeOpportunity({ id: "job", categoryId: "employment", opportunityType: "job" });
+    const contest = makeOpportunity({ id: "contest", categoryId: "contest", opportunityType: "contest" });
+    const job = makeOpportunity({ id: "job", categoryId: "job", opportunityType: "job" });
     const results = filterAndSortByIntent(
-      makeIntent({ categoryHint: "career", opportunityTypeHint: "contest" }),
+      makeIntent({ categoryHint: "contest", opportunityTypeHint: "contest" }),
       [contest, job],
       makeProfile(),
     );
@@ -171,16 +171,46 @@ describe("filterAndSortByIntent — matchReason text", () => {
 describe("filterAndSortByIntent — end-to-end with parseQuery, the 5 example queries", () => {
   const profile = makeProfile();
 
+  // One fixture per query need: an unrestricted money-category item, a 기획/PM-tagged contest
+  // with a benefit amount and a deadline inside every relevant window, and an unrestricted-experience
+  // job. See each query's inline note for which fixture(s) it exercises and why.
+  const subsidy = makeOpportunity({
+    id: "subsidy",
+    categoryId: "government-policy",
+    opportunityType: "gov_support",
+    subCategoryId: "subsidy",
+    eligibility: {},
+  });
+  const contest = makeOpportunity({
+    id: "contest",
+    categoryId: "contest",
+    opportunityType: "contest",
+    subCategoryId: "contest",
+    tags: ["기획/PM"],
+    benefitAmount: 10_000_000,
+    eligibility: {},
+    applyStartDate: daysFromNow(-5),
+    applyEndDate: daysFromNow(20),
+  });
+  const internship = makeOpportunity({
+    id: "internship",
+    categoryId: "job",
+    opportunityType: "job",
+    subCategoryId: "job_intern",
+    requiredExperienceLevel: "무관",
+    eligibility: {},
+  });
+  const sample = [subsidy, contest, internship];
+
   it.each([
-    "서울에 사는 27살 무직인데 내가 받을 수 있는 지원금 찾아줘",
-    "이번달 마감인 기획/PM 관련 공모전 찾아줘",
-    "대학생 아니어도 참가 가능한 AI 공모전만 찾아줘",
-    "상금 500만원 이상이고 2주 이상 남은 공모전 찾아줘",
-    "경력 무관 인턴 중에 스펙에 도움될만한 것만 골라줘",
-  ])("returns results for: %s", async (query) => {
-    const { OPPORTUNITIES } = await import("../mock/opportunities");
+    "서울에 사는 27살 무직인데 내가 받을 수 있는 지원금 찾아줘", // categoryId=money → subsidy
+    "이번달 마감인 기획/PM 관련 공모전 찾아줘", // contest tagged 기획/PM, deadline in 20 days → contest
+    "대학생 아니어도 참가 가능한 AI 공모전만 찾아줘", // unrestricted-education contest → contest
+    "상금 500만원 이상이고 2주 이상 남은 공모전 찾아줘", // contest, 1000만원, 20 days left → contest
+    "경력 무관 인턴 중에 스펙에 도움될만한 것만 골라줘", // unrestricted-experience job → internship
+  ])("returns results for: %s", (query) => {
     const intent = parseQuery(query);
-    const results = filterAndSortByIntent(intent, OPPORTUNITIES, profile);
+    const results = filterAndSortByIntent(intent, sample, profile);
     expect(results.length).toBeGreaterThan(0);
   });
 });

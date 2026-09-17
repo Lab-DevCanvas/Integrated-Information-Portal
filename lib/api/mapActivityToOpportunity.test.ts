@@ -34,7 +34,7 @@ describe("mapActivityToOpportunity", () => {
     expect(opp.applyStartDate).toBe("2026-09-01");
     expect(opp.applyEndDate).toBe("2026-09-30");
     expect(opp.createdAt).toBe(activity.first_collected_at);
-    expect(opp.applyUrl).toBe("https://example.com/detail");
+    expect(opp.refUrl).toBe("https://example.com/detail");
   });
 
   it("maps organizer from a known source slug to its Korean label", () => {
@@ -47,11 +47,11 @@ describe("mapActivityToOpportunity", () => {
   });
 
   it.each([
-    ["contest", undefined, "contest", "career", "contest"],
-    ["activity", undefined, "external_activity", "career", "hackathon"],
-    ["job", undefined, "job", "employment", "job_fulltime"],
-    ["government-policy", "bokjiro", "gov_support", "money", "subsidy"],
-    ["government-policy", "youthcenter", "youth_policy", "money", "subsidy"],
+    ["contest", undefined, "contest", "contest", "contest"],
+    ["activity", undefined, "external_activity", "activity", "activity"],
+    ["job", undefined, "job", "job", "job"],
+    ["government-policy", "bokjiro", "gov_support", "government-policy", "government-policy"],
+    ["government-policy", "youthcenter", "youth_policy", "government-policy", "government-policy"],
   ] as const)(
     "maps category=%s source=%s to opportunityType=%s categoryId=%s subCategoryId=%s",
     (category, source, opportunityType, categoryId, subCategoryId) => {
@@ -69,13 +69,13 @@ describe("mapActivityToOpportunity", () => {
     expect(opp.isAlwaysOpen).toBe(true);
   });
 
-  it("fills in a placeholder end date when period_end is missing and not always-open", () => {
+  it("preserves missing dates without inventing a deadline", () => {
     const activity = makeActivity({ period_status: "unknown", period_start: null, period_end: null });
     const opp = mapActivityToOpportunity(activity);
 
     expect(opp.isAlwaysOpen).toBe(false);
-    expect(opp.applyStartDate).toBe(activity.first_collected_at);
-    expect(new Date(opp.applyEndDate).getTime()).toBeGreaterThan(new Date(activity.first_collected_at).getTime());
+    expect(opp.applyStartDate).toBe("");
+    expect(opp.applyEndDate).toBe("");
   });
 
   it("falls back to a placeholder title/summary when the crawler returned null", () => {
@@ -93,18 +93,18 @@ describe("mapActivityToOpportunity", () => {
     expect(opp.description).toBe(longSummary);
   });
 
-  it("uses an empty eligibility rule set, which judgeEligibility treats as unrestricted (pass)", () => {
+  it("treats unavailable eligibility as unknown", () => {
     const opp = mapActivityToOpportunity(makeActivity());
     expect(opp.eligibility).toEqual({});
 
     const judgement = judgeEligibility(makeProfile(), opp);
-    expect(judgement.overall).toBe("pass");
-    expect(judgement.items).toEqual([]);
+    expect(judgement.overall).toBe("unknown");
+    expect(judgement.items[0].status).toBe("unknown");
   });
 
   it("marks region/competition/portfolio/experience-level fields with fixed placeholder values", () => {
     const opp = mapActivityToOpportunity(makeActivity());
-    expect(opp.region).toEqual(["전국"]);
+    expect(opp.region).toEqual([]);
     expect(opp.requiredExperienceLevel).toBe("무관");
     expect(opp.competitionLevel).toBe(3);
     expect(opp.portfolioValue).toBe(3);
@@ -112,8 +112,8 @@ describe("mapActivityToOpportunity", () => {
     expect(opp.benefitAmount).toBeUndefined();
   });
 
-  it("omits applyUrl when detail_url is null", () => {
+  it("omits refUrl when detail_url is null", () => {
     const opp = mapActivityToOpportunity(makeActivity({ detail_url: null }));
-    expect(opp.applyUrl).toBeUndefined();
+    expect(opp.refUrl).toBeUndefined();
   });
 });

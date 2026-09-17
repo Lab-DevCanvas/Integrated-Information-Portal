@@ -74,13 +74,13 @@ export const CATEGORY_KEYWORDS: {
   categoryId: CategoryId;
   opportunityType?: OpportunityType;
 }[] = [
-  { pattern: /공모전/, categoryId: "career", opportunityType: "contest" },
-  { pattern: /대외활동|해커톤/, categoryId: "career", opportunityType: "external_activity" },
-  { pattern: /부트캠프|교육과정|자격증/, categoryId: "career" },
-  { pattern: /채용|취업|신입|인턴/, categoryId: "employment", opportunityType: "job" },
-  { pattern: /장학금/, categoryId: "money", opportunityType: "scholarship" },
-  { pattern: /지원금|수당/, categoryId: "money" },
-  { pattern: /청년정책|정책/, categoryId: "money", opportunityType: "youth_policy" },
-  { pattern: /주거|임대|전세|주택/, categoryId: "housing" },
-  { pattern: /창업/, categoryId: "startup" },
+  { pattern: /공모전/, categoryId: "contest", opportunityType: "contest" },
+  { pattern: /대외활동|해커톤/, categoryId: "activity", opportunityType: "external_activity" },
+  { pattern: /부트캠프|교육과정|자격증/, categoryId: "activity" },
+  { pattern: /채용|취업|신입|인턴/, categoryId: "job", opportunityType: "job" },
+  { pattern: /장학금/, categoryId: "government-policy", opportunityType: "scholarship" },
+  { pattern: /지원금|수당/, categoryId: "government-policy" },
+  { pattern: /청년정책|정책/, categoryId: "government-policy", opportunityType: "youth_policy" },
+  { pattern: /주거|임대|전세|주택/, categoryId: "government-policy" },
+  { pattern: /창업/, categoryId: "government-policy" },
 ];

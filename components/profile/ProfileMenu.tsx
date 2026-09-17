@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 import { NotificationFeed } from "@/components/dashboard/NotificationFeed";
 import { getNewOpportunities } from "@/lib/notifications";
-import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
+import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { Avatar } from "./Avatar";
 import { AvatarUpload } from "./AvatarUpload";
@@ -20,6 +20,7 @@ export function ProfileMenu() {
   const applyPlanIds = useAppStore((s) => s.applyPlanIds);
   const updateProfile = useAppStore((s) => s.updateProfile);
   const allOpportunities = useAllOpportunities();
+  const isLoading = useIsLoadingOpportunities();
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("알림");
@@ -101,11 +102,15 @@ export function ProfileMenu() {
           </div>
 
           <div className="max-h-80 overflow-y-auto p-2">
-            {tab === "알림" && <NotificationFeed entries={newEntries.slice(0, 5)} mode="teaser" teaserCount={5} />}
+            {tab === "알림" && (
+              <NotificationFeed entries={newEntries.slice(0, 5)} mode="teaser" teaserCount={5} isLoading={isLoading} />
+            )}
 
             {tab === "저장" &&
               (savedItems.length === 0 ? (
-                <p className="p-4 text-center text-sm text-slate-400 dark:text-slate-500">아직 저장한 기회가 없어요.</p>
+                <p className="p-4 text-center text-sm text-slate-400 dark:text-slate-500">
+                  {isLoading && savedIds.length > 0 ? "불러오는 중이에요…" : "아직 저장한 기회가 없어요."}
+                </p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {savedItems.slice(0, 6).map((o) => (
@@ -125,7 +130,7 @@ export function ProfileMenu() {
             {tab === "지원계획" &&
               (applyPlanItems.length === 0 ? (
                 <p className="p-4 text-center text-sm text-slate-400 dark:text-slate-500">
-                  아직 지원 계획에 담은 기회가 없어요.
+                  {isLoading && applyPlanIds.length > 0 ? "불러오는 중이에요…" : "아직 지원 계획에 담은 기회가 없어요."}
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">

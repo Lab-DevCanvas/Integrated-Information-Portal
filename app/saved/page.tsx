@@ -3,7 +3,8 @@
 import { Bookmark } from "lucide-react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
 
@@ -11,6 +12,7 @@ export default function SavedPage() {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
   const allOpportunities = useAllOpportunities();
+  const isLoading = useIsLoadingOpportunities();
 
   if (!profile) return null;
 
@@ -29,11 +31,15 @@ export default function SavedPage() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState
-          icon={Bookmark}
-          title="아직 저장한 기회가 없어요"
-          description="마음에 드는 기회를 저장해서 모아보세요."
-        />
+        isLoading && savedIds.length > 0 ? (
+          <LoadingState title="저장한 기회를 불러오는 중이에요" />
+        ) : (
+          <EmptyState
+            icon={Bookmark}
+            title="아직 저장한 기회가 없어요"
+            description="마음에 드는 기회를 저장해서 모아보세요."
+          />
+        )
       ) : (
         <div className="space-y-3">
           {items.map(({ opportunity, score }) => (

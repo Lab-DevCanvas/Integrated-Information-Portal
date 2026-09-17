@@ -7,6 +7,7 @@ import { CompareTray } from "@/components/layout/CompareTray";
 import { SearchFab } from "@/components/layout/SearchFab";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { ThemeEffect } from "@/components/layout/ThemeEffect";
+import { CrawlingStatus } from "@/components/layout/CrawlingStatus";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeEffect />
         <Header />
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-40 md:pb-24">
+          <CrawlingStatus />
           <ProfileGate>{children}</ProfileGate>
         </main>
         <CompareTray />

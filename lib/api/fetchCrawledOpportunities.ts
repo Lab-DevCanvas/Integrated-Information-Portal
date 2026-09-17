@@ -12,12 +12,15 @@ import type { Opportunity } from "../types";
 const CATEGORIES = ["contest", "government-policy", "activity", "job"] as const;
 const PER_CATEGORY_LIMIT = 25;
 
-export async function fetchCrawledOpportunities(): Promise<Opportunity[]> {
+export async function fetchCrawledOpportunities(onPartialFailure?: (categories: string[]) => void): Promise<Opportunity[]> {
   const results = await Promise.allSettled(
     CATEGORIES.map((category) => listActivities({ category, pageSize: PER_CATEGORY_LIMIT })),
   );
 
   const activities: ActivityDTO[] = [];
+  const failedCategories = CATEGORIES.filter((_, index) => results[index].status === "rejected");
+  if (failedCategories.length === CATEGORIES.length) throw new Error("모든 카테고리 조회에 실패했습니다.");
+  onPartialFailure?.(failedCategories);
   for (const result of results) {
     // A single category request failing (timeout, transient 5xx) shouldn't drop the other three —
     // partial live data is better than none.

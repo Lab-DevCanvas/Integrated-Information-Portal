@@ -9,7 +9,6 @@ import {
   levelLabel,
   prepDifficultyLevel,
 } from "./format";
-import { OPPORTUNITIES } from "./mock/opportunities";
 import { makeOpportunity } from "./testFixtures";
 
 describe("formatKRW", () => {
@@ -76,8 +75,10 @@ describe("prepDifficultyLevel", () => {
 describe("lastCheckedLabel", () => {
   it("never produces a negative hour or minute component (regression: signed >> bug)", () => {
     // A signed `>>` on a hash exceeding 2^31-1 used to yield a negative minute (e.g. "10:-29").
-    // Asserting the strict two-digit format across every mock id is a complete regression check.
-    for (const opportunity of OPPORTUNITIES) {
+    // A wide spread of ids gives a uniformly-distributed hash a good chance of landing on both
+    // sides of the sign bit, so this is a meaningful regression check even without real data.
+    for (let i = 0; i < 200; i++) {
+      const opportunity = makeOpportunity({ id: `regression-id-${i}` });
       expect(lastCheckedLabel(opportunity)).toMatch(/^\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}$/);
     }
   });

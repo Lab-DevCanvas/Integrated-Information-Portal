@@ -97,6 +97,12 @@ export function OpportunityDetail({
   const [activeSection, setActiveSection] = useState<string>(NAV_TABS[0].id);
 
   useEffect(() => {
+    useAppStore.setState((state) => ({
+      crawledOpportunities: [...state.crawledOpportunities.filter((item) => item.id !== opportunity.id), opportunity],
+    }));
+  }, [opportunity]);
+
+  useEffect(() => {
     const sections = NAV_TABS.map((t) => document.getElementById(t.id)).filter(
       (el): el is HTMLElement => Boolean(el),
     );
@@ -299,7 +305,7 @@ export function OpportunityDetail({
                     지역
                   </dt>
                   <dd className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {opportunity.region.join(" · ")}
+                    {opportunity.region.join(" · ") || "원문 확인 필요"}
                   </dd>
                 </div>
                 <div>
@@ -431,9 +437,9 @@ export function OpportunityDetail({
                   </dd>
                 </div>
               </dl>
-              {opportunity.applyUrl ? (
+              {opportunity.refUrl ? (
                 <a
-                  href={opportunity.applyUrl}
+                  href={opportunity.refUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
@@ -445,7 +451,7 @@ export function OpportunityDetail({
                 <button
                   type="button"
                   disabled
-                  title="목업 데이터입니다 — 실제 신청 링크는 제공되지 않아요."
+                  title="원문 링크가 제공되지 않은 공고입니다."
                   className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-indigo-400"
                 >
                   공식 공고 확인

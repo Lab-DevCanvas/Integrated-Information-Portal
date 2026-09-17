@@ -2,12 +2,12 @@ import type { ExperienceLevel, Opportunity, ScoreResult, ScoreSubscore, ScoreSub
 import { SCORE_WEIGHTS } from "../constants";
 import { judgeEligibility } from "../eligibility/judge";
 import { daysUntil } from "../mock/dateHelpers";
-import { OPPORTUNITIES } from "../mock/opportunities";
 import { buildExplanation } from "./explain";
 
-const VIEW_COUNTS = OPPORTUNITIES.map((o) => o.viewCount ?? 0);
-const VIEW_MIN = Math.min(...VIEW_COUNTS);
-const VIEW_MAX = Math.max(...VIEW_COUNTS);
+// No data source populates Opportunity.viewCount (the crawling backend doesn't provide it), so
+// popularity normalization below always falls back to its neutral 0.5 midpoint.
+const VIEW_MIN = 0;
+const VIEW_MAX = 0;
 
 function clamp(n: number, min = 0, max = 1): number {
   return Math.min(max, Math.max(min, n));
@@ -51,7 +51,7 @@ function scoreValue(opp: Opportunity): number {
 }
 
 function scoreUrgency(opp: Opportunity): number {
-  if (opp.isAlwaysOpen) return 0.5;
+  if (opp.isAlwaysOpen || !opp.applyEndDate) return 0.5;
   const d = daysUntil(opp.applyEndDate);
   if (d < 0) return 0;
   if (d <= 2) return 0.5;
@@ -119,7 +119,7 @@ export function computeScore(profile: UserProfile, opp: Opportunity, savedIds: s
 
 export function scoreAll(profile: UserProfile, opportunities: Opportunity[], savedIds: string[] = []) {
   return opportunities
-    .filter((o) => o.isAlwaysOpen || daysUntil(o.applyEndDate) >= 0)
+    .filter((o) => o.isAlwaysOpen || !o.applyEndDate || daysUntil(o.applyEndDate) >= 0)
     .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }))
     .sort((a, b) => b.score.totalScore - a.score.totalScore);
 }

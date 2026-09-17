@@ -3,7 +3,7 @@ import { CATEGORIES, getCategory, getSubCategoryLabel } from "./categories";
 
 describe("getCategory", () => {
   it("finds a category by id", () => {
-    expect(getCategory("employment")?.label).toBe("취업");
+    expect(getCategory("job")?.label).toBe("채용");
   });
 
   it("returns undefined for an unknown id", () => {
@@ -15,7 +15,7 @@ describe("getCategory", () => {
 describe("getSubCategoryLabel", () => {
   it("finds a subcategory label nested under any category", () => {
     expect(getSubCategoryLabel("contest")).toBe("공모전");
-    expect(getSubCategoryLabel("pre_startup_package")).toBe("예비창업패키지");
+    expect(getSubCategoryLabel("government-policy")).toBe("정부정책");
   });
 
   it("falls back to the raw id when not found", () => {

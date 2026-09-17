@@ -1,5 +1,4 @@
 import { daysSince } from "./mock/dateHelpers";
-import { OPPORTUNITIES } from "./mock/opportunities";
 import { computeScore } from "./scoring/score";
 import type { Opportunity, ScoreResult, UserProfile } from "./types";
 
@@ -27,8 +26,8 @@ function relevantEntriesWithin(
 /** Used by the notifications page and profile menu badge — a broader "recently discovered" window. */
 export function getNewOpportunities(
   profile: UserProfile,
-  savedIds: string[] = [],
-  opportunities: Opportunity[] = OPPORTUNITIES,
+  savedIds: string[],
+  opportunities: Opportunity[],
 ): NotificationEntry[] {
   return relevantEntriesWithin(NEW_WINDOW_DAYS, profile, savedIds, opportunities);
 }
@@ -36,8 +35,8 @@ export function getNewOpportunities(
 /** Used by the dashboard's top teaser card — only opportunities added today. */
 export function getTodaysOpportunities(
   profile: UserProfile,
-  savedIds: string[] = [],
-  opportunities: Opportunity[] = OPPORTUNITIES,
+  savedIds: string[],
+  opportunities: Opportunity[],
 ): NotificationEntry[] {
   return relevantEntriesWithin(0, profile, savedIds, opportunities);
 }

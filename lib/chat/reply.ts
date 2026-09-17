@@ -1,5 +1,4 @@
 import { buildComparisonSentence } from "../compare/recommend";
-import { OPPORTUNITIES } from "../mock/opportunities";
 import { filterAndSortByIntent } from "../search/applyIntent";
 import { parseQuery } from "../search/parser";
 import type { Opportunity, ParsedIntent, UserProfile } from "../types";
@@ -20,7 +19,7 @@ export function generateAssistantReply(
   message: string,
   profile: UserProfile,
   savedIds: string[],
-  opportunities: Opportunity[] = OPPORTUNITIES,
+  opportunities: Opportunity[],
 ): ChatReply {
   const intent = parseQuery(message);
   const results = filterAndSortByIntent(intent, opportunities, profile, savedIds);

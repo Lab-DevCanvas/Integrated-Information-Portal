@@ -1,4 +1,3 @@
-import { OPPORTUNITIES } from "./mock/opportunities";
 import { dateKey } from "./mock/dateHelpers";
 import type { Opportunity } from "./types";
 
@@ -20,10 +19,10 @@ function eventsForOpportunity(o: Opportunity): CalendarEvent[] {
   if (!o.isAlwaysOpen) {
     events.push({ id: `${o.id}-deadline`, opportunityId: o.id, title: o.title, type: "deadline", date: o.applyEndDate });
   }
-  return events;
+  return events.filter((event) => Number.isFinite(new Date(event.date).getTime()));
 }
 
-export function buildCalendarEventsByDate(opportunities: Opportunity[] = OPPORTUNITIES): Map<string, CalendarEvent[]> {
+export function buildCalendarEventsByDate(opportunities: Opportunity[]): Map<string, CalendarEvent[]> {
   const byDate = new Map<string, CalendarEvent[]>();
 
   for (const o of opportunities) {

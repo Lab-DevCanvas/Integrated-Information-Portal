@@ -1,5 +1,6 @@
 import { Bell } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { daysSince } from "@/lib/mock/dateHelpers";
 import type { NotificationEntry } from "@/lib/notifications";
 import { NotificationItem } from "./NotificationItem";
@@ -8,10 +9,12 @@ interface Props {
   entries: NotificationEntry[];
   mode?: "teaser" | "full";
   teaserCount?: number;
+  isLoading?: boolean;
 }
 
-export function NotificationFeed({ entries, mode = "teaser", teaserCount = 4 }: Props) {
+export function NotificationFeed({ entries, mode = "teaser", teaserCount = 4, isLoading = false }: Props) {
   if (entries.length === 0) {
+    if (isLoading) return <LoadingState title="새로운 기회를 불러오는 중이에요" />;
     return (
       <EmptyState
         icon={Bell}
