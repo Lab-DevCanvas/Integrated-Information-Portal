@@ -55,6 +55,25 @@ describe("listActivities", () => {
     expect(calledUrl.searchParams.get("page_size")).toBe("20");
   });
 
+  it("cancels the actual HTTP request when the caller aborts", async () => {
+    const controller = new AbortController();
+    fetchMock.mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => reject(options.signal.reason), { once: true });
+    }));
+    const request = listActivities({}, controller.signal);
+    const rejection = expect(request).rejects.toMatchObject({ name: "AbortError" });
+    controller.abort();
+    await rejection;
+    expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
+  });
+
+  it("does not start an already cancelled request", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await expect(listActivities({}, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns the parsed response body on success", async () => {
     const body = { total: 1, items: [{ id: "abc" }] };
     fetchMock.mockResolvedValueOnce(jsonResponse(body));
