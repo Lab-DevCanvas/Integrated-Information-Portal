@@ -1,9 +1,8 @@
 # OPFINDE — AI 기회 탐색 플랫폼
 
 공모전, 대외활동, 채용/인턴, 장학금, 정부지원금, 청년정책, 주거지원, 창업지원 등 흩어진 "기회 정보"를
-한곳에 모아 **검색이 아닌 추천** 중심으로 보여주는 Next.js 웹앱입니다. 인증 없이, 큐레이션한 목데이터
-60건과 규칙 기반 추천/자격판단 로직으로 핵심 기능을 시연하는 프로토타입이며, 여기에 sibling 저장소
-`crawling`(실제 크롤링 백엔드)의 실시간 데이터가 더해집니다 — 상세는
+한곳에 모아 탐색하는 Next.js 웹앱입니다. sibling 저장소 `crawling`의 실제 공고를 조회하며,
+기존 추천·검색 파서·프로필은 브라우저의 로컬 기능입니다. 서버 자격 판정·추천·Agent API는 아직 없습니다. 상세는
 [`docs/crawling-integration.md`](docs/crawling-integration.md) 참고.
 
 ## 핵심 기능
@@ -11,9 +10,9 @@
 - **추천 대시보드** (`/`) — 온보딩에서 입력한 프로필을 바탕으로 계산한 적합도 점수 순 추천 리스트, 오늘 추가된 기회 알림 카드
 - **AI 자연어 검색 챗봇** (`/search`) — "서울 사는 27살 무직인데 받을 수 있는 지원금 찾아줘" 같은 문장을 파싱해 조건에 맞는 기회를 대화형으로 제안
 - **자격 자동판단** — 나이/지역/재학상태/취업상태/소득/창업이력 등 조건별 지원 가능(🟢)/불가(🔴)/확인 필요(🟡) 판정
-- **기회 상세** (`/opportunities/[id]`) — 점수 breakdown, 자격판단 표, 원문 출처, 지원 계획/저장/비교 액션
+- **카테고리 탐색** (`/categories`) — 기존 검색·상세 필터·정렬과 출처·모집 상태·URL 필터·점진 로딩·무한 스크롤 통합
+- **기회 상세** (`/opportunities/[id]`) — 실제 공고 내용·기간·수집 시각·원문 링크와 로컬 저장/지원 계획
 - **비교** (`/compare`) — 최대 4개 기회를 선택해 표로 비교하고 AI 추천 문장 생성
-- **카테고리 탐색** (`/categories`) — 다양한 필터 + 정렬 옵션으로 전체 기회 브라우징
 - **지원 계획** (`/apply-plan`), **저장한 기회** (`/saved`), **알림** (`/notifications`) — 프로필 메뉴에서 접근
 - 다크 모드, 데스크톱/모바일 전용 UI(하단 탭바 vs 상단 네비) 지원
 
@@ -24,8 +23,7 @@
 - [Zustand](https://github.com/pmndrs/zustand) `persist` 미들웨어 — 클라이언트 상태를 localStorage에 저장 (자체 백엔드 없음)
 - [Vitest](https://vitest.dev) — 순수 로직 단위 테스트
 - [lucide-react](https://lucide.dev) — 아이콘
-- sibling 저장소 `crawling`(FastAPI + MongoDB)의 공개 REST API를 `fetch`로 직접 호출해 실시간
-  공모전/정책/대외활동/채용 데이터를 목데이터에 합칩니다 (`docs/crawling-integration.md`)
+- sibling 저장소 `crawling`(FastAPI + MongoDB)의 REST API에 Next.js 프록시로 연결합니다.
 
 ## 시작하기
 
@@ -36,7 +34,8 @@ npm run dev       # http://localhost:3000
 
 기본적으로 배포된 crawling API(`http://34.59.75.165:8000`)에서 실시간 데이터를 가져옵니다. 다른
 주소를 쓰려면(예: 로컬에서 `crawling` 저장소를 직접 띄운 경우) `.env.local`에
-`NEXT_PUBLIC_CRAWLING_API_URL`을 설정하세요 — 상세는
+`CRAWLING_API_URL`을 설정하세요.
+`.env.example`을 참고하세요. 배포된 구버전 백엔드는 소스 설정 API가 없을 수 있습니다. 상세는
 [`docs/crawling-integration.md`](docs/crawling-integration.md).
 
 기타 명령어:
@@ -75,7 +74,6 @@ lib/
   types.ts                 전체 도메인 타입 (UserProfile, Opportunity, ScoreResult, ParsedIntent 등)
   constants.ts              지역/재학상태/직무/점수 가중치 등 상수
   categories.ts              카테고리 트리 + 필터 정의
-  mock/opportunities.ts       큐레이션 목데이터 60건 (5개 카테고리)
   mock/dateHelpers.ts          런타임 상대 날짜 유틸
   api/                        crawling 백엔드 연동 — crawlingClient.ts(fetch 래퍼),
                                  mapActivityToOpportunity.ts(스키마 변환), fetchCrawledOpportunities.ts
@@ -140,16 +138,12 @@ docs/
 각 상대 대비 가장 격차가 큰 지표를 골라 추천 문장을 조립합니다. 전원이 자격 fail이면 "차악" 안내
 문장으로 대체됩니다.
 
-## 목데이터 규칙
+## 실제 데이터와 로컬 모델
 
-- `lib/mock/opportunities.ts`에 60건이 5개 카테고리(취업/커리어/돈/주거/창업)에 분산되어 있습니다.
-- 모든 날짜는 하드코딩된 절대 날짜가 아니라 `daysFromNow(offset)`(런타임 기준 상대 오프셋)로 생성됩니다.
-  마감 임박/여유/상시모집 건이 고루 섞여 있어 앱을 언제 실행해도 데모가 자연스럽게 동작합니다.
-- 배열형 자격 필드(`regions`, `educationStatuses` 등)가 비어 있으면 "제한없음"을 의미합니다.
-- 실행 중 브라우저에서 `useAllOpportunities()`가 이 60건에 crawling 백엔드의 실시간 데이터(최대
-  100건)를 더합니다 — 지역/자격조건/경쟁률처럼 크롤러가 주지 않는 필드는 고정 플레이스홀더 값으로
-  채워집니다. 자세한 필드별 출처는 [`docs/crawling-integration.md`](docs/crawling-integration.md)의
-  "필드 매핑" 절 참고.
+대시보드는 카테고리별 25건 샘플을 사용하며, 전체 탐색은 `/categories`에서 점진 로딩과 무한 스크롤로 조회합니다.
+저장·계획·비교 ID가 샘플 밖이면 단건 조회로 보완합니다. 누락된 날짜·지역은 임의로 채우지 않고,
+수집 데이터의 자격 판정은 ‘확인 필요’로 표시합니다. 경쟁률·포트폴리오 등 기존 점수 모델의 고정값은
+로컬 호환용이며 백엔드 분석 결과가 아닙니다. 자세한 범위는 [상태 보고서](docs/backend-frontend-status.md)를 참고하세요.
 
 ## 상태 관리
 
