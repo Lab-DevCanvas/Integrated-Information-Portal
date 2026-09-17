@@ -3,6 +3,7 @@
 import { Scale } from "lucide-react";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { COMPARE_MAX } from "@/lib/constants";
+import { IconTooltip } from "@/components/ui/IconTooltip";
 
 export function CompareButton({ id, className = "" }: { id: string; className?: string }) {
   const comparing = useAppStore((s) => s.compareIds.includes(id));
@@ -11,6 +12,7 @@ export function CompareButton({ id, className = "" }: { id: string; className?: 
   const atMax = compareCount >= COMPARE_MAX && !comparing;
 
   return (
+    <IconTooltip label={atMax ? `최대 ${COMPARE_MAX}개까지 비교할 수 있어요` : comparing ? "비교함에서 제거" : "비교함에 추가"}>
     <button
       type="button"
       disabled={atMax}
@@ -20,7 +22,6 @@ export function CompareButton({ id, className = "" }: { id: string; className?: 
         toggleCompare(id);
       }}
       aria-label={comparing ? "비교함에서 제거" : "비교함에 추가"}
-      title={atMax ? `최대 ${COMPARE_MAX}개까지 비교할 수 있어요` : undefined}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         comparing
           ? "bg-indigo-600 text-white"
@@ -29,5 +30,6 @@ export function CompareButton({ id, className = "" }: { id: string; className?: 
     >
       <Scale className="h-4 w-4" />
     </button>
+    </IconTooltip>
   );
 }

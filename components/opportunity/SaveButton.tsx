@@ -2,12 +2,14 @@
 
 import { Bookmark } from "lucide-react";
 import { useAppStore } from "@/lib/store/useAppStore";
+import { IconTooltip } from "@/components/ui/IconTooltip";
 
 export function SaveButton({ id, className = "" }: { id: string; className?: string }) {
   const saved = useAppStore((s) => s.savedIds.includes(id));
   const toggleSaved = useAppStore((s) => s.toggleSaved);
 
   return (
+    <IconTooltip label={saved ? "북마크 해제" : "북마크에 저장"}>
     <button
       type="button"
       onClick={(e) => {
@@ -24,5 +26,6 @@ export function SaveButton({ id, className = "" }: { id: string; className?: str
     >
       <Bookmark className="h-4 w-4" fill={saved ? "currentColor" : "none"} />
     </button>
+    </IconTooltip>
   );
 }
