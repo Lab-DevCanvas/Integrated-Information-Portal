@@ -1,0 +1,1 @@
+export const COLLECTOR_SOURCES = ["bokjiro", "youthcenter", "linkareer", "allcon", "campuspick", "data_go_kr", "saramin", "jobkorea", "linkareer_activity", "campuspick_activity", "allforyoung"] as const;

@@ -1,12 +1,16 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 
 export function ProfileGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const profile = useAppStore((s) => s.profile);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
+
+  if (pathname.startsWith("/categories") || pathname.startsWith("/opportunities/")) return <>{children}</>;
 
   if (!hasHydrated) {
     return (

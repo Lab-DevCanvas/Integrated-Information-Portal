@@ -1,22 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type SetStateAction } from "react";
 import { ChevronDown, ChevronUp, LayoutGrid, RotateCcw, Search, X } from "lucide-react";
-import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import { CategoryResultList } from "./CategoryResultList";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { CATEGORIES } from "@/lib/categories";
-import { EXPERIENCE_LEVELS, OPPORTUNITY_TYPE_LABELS, REGIONS } from "@/lib/constants";
-import { daysUntil } from "@/lib/mock/dateHelpers";
-import { computeScore } from "@/lib/scoring/score";
-import { useAllOpportunities } from "@/lib/hooks/useAllOpportunities";
+import { EXPERIENCE_LEVELS, REGIONS } from "@/lib/constants";
+import { useCategoryResults } from "@/lib/hooks/useCategoryResults";
+import { useCategoryOpportunities } from "@/lib/hooks/useCategoryOpportunities";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { COLLECTOR_SOURCES } from "@/lib/api/collectorSources";
 import { useAppStore } from "@/lib/store/useAppStore";
-import type { CategoryId, ExperienceLevel, OpportunityType, RegionCode } from "@/lib/types";
+import type { CategoryId, ExperienceLevel, RegionCode } from "@/lib/types";
 
 type SortMode = "score" | "deadline" | "benefit" | "created" | "popularity" | "portfolio";
 type DeadlineWindow = "all" | "7" | "30" | "90";
 
-const OPPORTUNITY_TYPES = Object.keys(OPPORTUNITY_TYPE_LABELS) as OpportunityType[];
+const CATEGORY_IDS = CATEGORIES.map((category) => category.id);
+const EMPTY_FILTER: never[] = [];
+
+function useArrayFilter<T extends string>(raw: string | null, allowed: readonly T[], fallback: T[] = EMPTY_FILTER) {
+  return useMemo(() => raw === null ? fallback : raw.split(",").filter((item): item is T => allowed.includes(item as T)), [raw, allowed, fallback]);
+}
+
 const PROFILE_REGIONS = REGIONS.filter((r) => r !== "전국");
 const DEADLINE_WINDOWS: { value: DeadlineWindow; label: string }[] = [
   { value: "all", label: "전체" },
@@ -29,26 +37,44 @@ interface Props {
   initialCategoryIds?: CategoryId[];
 }
 
-export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
+export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
-  const allOpportunities = useAllOpportunities();
-
-  const [categoryIds, setCategoryIds] = useState<CategoryId[]>(initialCategoryIds);
-  const [typeIds, setTypeIds] = useState<OpportunityType[]>([]);
-  const [regions, setRegions] = useState<RegionCode[]>([]);
-  const [experienceLevels, setExperienceLevels] = useState<ExperienceLevel[]>([]);
-  const [deadlineWindow, setDeadlineWindow] = useState<DeadlineWindow>("all");
-  const [eligibleOnly, setEligibleOnly] = useState(false);
-  const [keyword, setKeyword] = useState("");
-  const [sortMode, setSortMode] = useState<SortMode>("score");
+  const query = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  function updateQuery(key: string, value: string) {
+    const next = new URLSearchParams(query.toString());
+    next.set(key, value);
+    next.delete("page");
+    next.delete("types");
+    router.push(`${pathname}?${next.toString()}`, { scroll: false });
+  }
+  function arraySetter<T extends string>(key: string, value: T[]) {
+    return (next: SetStateAction<T[]>) => updateQuery(key, (typeof next === "function" ? next(value) : next).join(","));
+  }
+  const categoryIds = useArrayFilter(query.get("categories"), CATEGORY_IDS, initialCategoryIds);
+  const typeIds = EMPTY_FILTER;
+  const regions = useArrayFilter<RegionCode>(query.get("regions"), REGIONS);
+  const experienceLevels = useArrayFilter<ExperienceLevel>(query.get("experience"), EXPERIENCE_LEVELS);
+  const setCategoryIds = arraySetter("categories", categoryIds);
+  const setRegions = arraySetter("regions", regions);
+  const setExperienceLevels = arraySetter("experience", experienceLevels);
+  const deadlineWindow = (DEADLINE_WINDOWS.some((w) => w.value === query.get("deadline")) ? query.get("deadline") : "all") as DeadlineWindow;
+  const setDeadlineWindow = (value: DeadlineWindow) => updateQuery("deadline", value);
+  const eligibleOnly = query.get("eligible") === "true";
+  const setEligibleOnly = (value: boolean) => updateQuery("eligible", String(value));
+  const keyword = query.get("q") ?? "";
+  const setKeyword = (value: string) => updateQuery("q", value);
+  const sortMode = (query.get("sort") ?? "score") as SortMode;
+  const setSortMode = (value: SortMode) => updateQuery("sort", value);
+  const source = query.get("source") ?? "";
+  const periodStatus = query.get("period_status") ?? "";
+  const { items: allOpportunities, loading: isLoading, loadingMore, total, error, backgroundError, retry } = useCategoryOpportunities(source, periodStatus);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function toggleCategory(id: CategoryId) {
     setCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-  function toggleType(id: OpportunityType) {
-    setTypeIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
   function toggleRegion(id: RegionCode) {
     setRegions((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -64,99 +90,22 @@ export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
     categoryIds.some((c) => !initialCategoryIds.includes(c)) ||
     typeIds.length > 0 ||
     keyword.trim() !== "" ||
-    advancedActive;
+    advancedActive || source !== "" || periodStatus !== "";
 
   function resetFilters() {
-    setCategoryIds(initialCategoryIds);
-    setTypeIds([]);
-    setRegions([]);
-    setExperienceLevels([]);
-    setDeadlineWindow("all");
-    setEligibleOnly(false);
-    setKeyword("");
+    router.push(pathname, { scroll: false });
   }
 
-  const items = useMemo(() => {
-    if (!profile) return [];
-    const kw = keyword.trim().toLowerCase();
+  const items = useCategoryResults({ allOpportunities, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, keyword, profile, savedIds, eligibleOnly, sortMode });
 
-    const base = allOpportunities.filter((o) => {
-      if (categoryIds.length > 0 && !categoryIds.includes(o.categoryId)) return false;
-      if (typeIds.length > 0 && !typeIds.includes(o.opportunityType)) return false;
-      if (regions.length > 0 && !o.region.includes("전국") && !regions.some((r) => o.region.includes(r))) return false;
-      if (
-        experienceLevels.length > 0 &&
-        o.requiredExperienceLevel !== "무관" &&
-        !experienceLevels.includes(o.requiredExperienceLevel)
-      )
-        return false;
-      if (deadlineWindow !== "all") {
-        if (o.isAlwaysOpen) return false;
-        if (daysUntil(o.applyEndDate) > Number(deadlineWindow)) return false;
-      }
-      if (kw) {
-        const haystack = `${o.title} ${o.summary} ${o.organizer} ${o.tags.join(" ")}`.toLowerCase();
-        if (!haystack.includes(kw)) return false;
-      }
-      return true;
-    });
-
-    let scored = base.map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }));
-
-    if (eligibleOnly) {
-      scored = scored.filter((x) => x.score.eligibilityJudgement.overall !== "fail");
-    }
-
-    switch (sortMode) {
-      case "deadline":
-        scored.sort((a, b) => {
-          const aAlways = a.opportunity.isAlwaysOpen ? 1 : 0;
-          const bAlways = b.opportunity.isAlwaysOpen ? 1 : 0;
-          if (aAlways !== bAlways) return aAlways - bAlways;
-          return daysUntil(a.opportunity.applyEndDate) - daysUntil(b.opportunity.applyEndDate);
-        });
-        break;
-      case "benefit":
-        scored.sort((a, b) => (b.opportunity.benefitAmount ?? 0) - (a.opportunity.benefitAmount ?? 0));
-        break;
-      case "created":
-        scored.sort(
-          (a, b) => new Date(b.opportunity.createdAt).getTime() - new Date(a.opportunity.createdAt).getTime(),
-        );
-        break;
-      case "popularity":
-        scored.sort((a, b) => (b.opportunity.viewCount ?? 0) - (a.opportunity.viewCount ?? 0));
-        break;
-      case "portfolio":
-        scored.sort((a, b) => b.opportunity.portfolioValue - a.opportunity.portfolioValue);
-        break;
-      default:
-        scored.sort((a, b) => b.score.totalScore - a.score.totalScore);
-    }
-
-    return scored;
-  }, [
-    profile,
-    savedIds,
-    allOpportunities,
-    categoryIds,
-    typeIds,
-    regions,
-    experienceLevels,
-    deadlineWindow,
-    eligibleOnly,
-    keyword,
-    sortMode,
-  ]);
-
-  if (!profile) return null;
+  const listKey = JSON.stringify([pathname, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, eligibleOnly, keyword, sortMode, source, periodStatus]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">카테고리 탐색</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          분야와 유형을 자유롭게 조합하고, 검색어로 좁혀서 공모전이든 채용이든 정책이든 한눈에 살펴보세요.
+          공모전·대외활동·채용·정부정책을 선택하고, 검색어로 원하는 공고를 찾아보세요.
         </p>
       </div>
 
@@ -208,18 +157,18 @@ export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500">유형</p>
-          <div className="flex flex-wrap gap-2">
-            <Chip selected={typeIds.length === 0} onClick={() => setTypeIds([])}>
-              전체
-            </Chip>
-            {OPPORTUNITY_TYPES.map((t) => (
-              <Chip key={t} selected={typeIds.includes(t)} onClick={() => toggleType(t)}>
-                {OPPORTUNITY_TYPE_LABELS[t]}
-              </Chip>
-            ))}
-          </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm text-slate-600 dark:text-slate-300">출처
+            <select aria-label="출처" value={source} onChange={(e) => updateQuery("source", e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+              <option value="">전체 출처</option>
+              {COLLECTOR_SOURCES.map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
+          <label className="text-sm text-slate-600 dark:text-slate-300">모집 상태
+            <select aria-label="모집 상태" value={periodStatus} onChange={(e) => updateQuery("period_status", e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
+              <option value="">전체 상태</option><option value="ongoing">모집 중</option><option value="upcoming">모집 예정</option><option value="always_open">상시 모집</option><option value="unknown">기간 미상</option><option value="expired">마감</option>
+            </select>
+          </label>
         </div>
 
         <div className="border-t border-slate-100 pt-3 dark:border-slate-800">
@@ -291,8 +240,11 @@ export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{items.length}건</p>
+        <p role="status" className="text-sm font-semibold text-slate-700 dark:text-slate-300">{isLoading ? "불러오는 중…" : error ? "조회 실패" : loadingMore || backgroundError
+          ? `전체 ${total.toLocaleString()}건 · ${allOpportunities.length.toLocaleString()}건 불러옴 · 현재 조건 ${items.length.toLocaleString()}건`
+          : `전체 ${total.toLocaleString()}건 · 조건 일치 ${items.length.toLocaleString()}건`}</p>
         <select
+          aria-label="정렬"
           value={sortMode}
           onChange={(e) => setSortMode(e.target.value as SortMode)}
           className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs text-slate-600 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -306,14 +258,20 @@ export function CategoryExplorer({ initialCategoryIds = [] }: Props) {
         </select>
       </div>
 
-      {items.length === 0 ? (
-        <EmptyState icon={LayoutGrid} title="조건에 맞는 기회가 없어요" description="필터나 검색어를 조정해보세요." />
+      {loadingMore && <p role="status" className="text-sm text-slate-500 dark:text-slate-400">나머지 공고를 불러오는 중이에요. 먼저 불러온 결과를 살펴보세요.</p>}
+      {backgroundError && <div role="alert" className="rounded-xl border border-amber-300 p-4 text-sm">
+        <p>{backgroundError}</p><button onClick={retry} className="mt-2 rounded-lg border px-3 py-2">다시 시도</button>
+      </div>}
+      {error ? (
+        <div role="alert" className="rounded-xl border border-red-200 p-5"><p>{error}</p><button onClick={retry} className="mt-3 rounded-lg border px-3 py-2">다시 시도</button></div>
+      ) : items.length === 0 ? (
+        isLoading || loadingMore ? (
+          <LoadingState title={isLoading ? "기회를 불러오는 중이에요" : "조건에 맞는 기회를 찾는 중이에요"} />
+        ) : (
+          <EmptyState icon={LayoutGrid} title={backgroundError ? "불러온 공고 중 조건에 맞는 기회가 없어요" : "조건에 맞는 기회가 없어요"} description={backgroundError ? "나머지 공고를 다시 불러오거나 필터를 조정해보세요." : "필터나 검색어를 조정해보세요."} />
+        )
       ) : (
-        <div className="space-y-3">
-          {items.map(({ opportunity, score }) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} score={score} />
-          ))}
-        </div>
+        <CategoryResultList key={listKey} items={items} loadingMore={loadingMore} backgroundError={backgroundError} />
       )}
     </div>
   );
