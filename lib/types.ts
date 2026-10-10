@@ -1,3 +1,4 @@
+import type { AISearchResult } from "./api/aiSearch";
 // --- Taxonomy ---
 export type CategoryId = "contest" | "activity" | "job" | "government-policy";
 
@@ -233,6 +234,8 @@ export interface SearchResultItem {
 
 // --- AI chat ---
 export interface ChatMessage {
+  aiResult?: AISearchResult;
+  error?: boolean;
   id: string;
   role: "user" | "assistant";
   text: string;

@@ -7,11 +7,10 @@ import { useAppStore } from "@/lib/store/useAppStore";
 
 export function SearchFab() {
   const pathname = usePathname();
-  const profile = useAppStore((s) => s.profile);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
   const compareIds = useAppStore((s) => s.compareIds);
 
-  if (!hasHydrated || !profile) return null;
+  if (!hasHydrated) return null;
   if (pathname === "/search") return null;
 
   // Mobile already has "AI 검색" in the bottom tab bar, so the FAB is desktop-only.

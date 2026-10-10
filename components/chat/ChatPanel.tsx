@@ -14,6 +14,9 @@ export function ChatPanel() {
   const activeConversationId = useAppStore((s) => s.activeConversationId);
   const startNewConversation = useAppStore((s) => s.startNewConversation);
   const setActiveConversation = useAppStore((s) => s.setActiveConversation);
+  const pendingChats = useAppStore((s) => s.pendingChats);
+  const cancelChat = useAppStore((s) => s.cancelChat);
+  const retryChat = useAppStore((s) => s.retryChat);
   const sendMessage = useAppStore((s) => s.sendMessage);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -26,7 +29,7 @@ export function ChatPanel() {
   }, [activeConversation?.messages.length]);
 
   function handleSend(text: string) {
-    sendMessage(text);
+    void sendMessage(text);
   }
 
   function handleSelect(id: string) {
@@ -90,7 +93,7 @@ export function ChatPanel() {
             <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-50">기회 결정 어시스턴트</p>
             <p className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              프로필과 기회 데이터 연결됨
+              공고 근거로 추천·비교·지원 계획
             </p>
           </div>
         </div>
@@ -107,7 +110,11 @@ export function ChatPanel() {
           <ChatEmptyState onSelectPrompt={handleSend} />
         )}
 
-        <ChatInputBar onSend={handleSend} />
+        {activeConversationId && pendingChats[activeConversationId] && <div role="status" className="px-4 py-2 text-sm">
+          공고와 근거를 확인하고 있습니다… <button className="ml-2 underline" onClick={() => cancelChat(activeConversationId)}>취소</button>
+        </div>}
+        {activeConversation?.messages.at(-1)?.error && <button className="px-4 py-2 text-sm underline" onClick={() => retryChat(activeConversation.id)}>다시 시도</button>}
+        <ChatInputBar onSend={handleSend} disabled={Boolean(activeConversationId && pendingChats[activeConversationId])} />
       </div>
     </div>
   );

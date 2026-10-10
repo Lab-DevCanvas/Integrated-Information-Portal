@@ -4,15 +4,16 @@ import { useState } from "react";
 import { ArrowUp } from "lucide-react";
 
 interface Props {
+  disabled?: boolean;
   onSend: (text: string) => void;
 }
 
-export function ChatInputBar({ onSend }: Props) {
+export function ChatInputBar({ onSend, disabled = false }: Props) {
   const [text, setText] = useState("");
 
   function submit() {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || disabled) return;
     onSend(trimmed);
     setText("");
   }
@@ -21,6 +22,8 @@ export function ChatInputBar({ onSend }: Props) {
     <div className="border-t border-slate-200 p-3 dark:border-slate-800 sm:p-4">
       <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 focus-within:border-indigo-400 dark:border-slate-700 dark:bg-slate-900">
         <input
+          disabled={disabled}
+          maxLength={2000}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -35,7 +38,7 @@ export function ChatInputBar({ onSend }: Props) {
         <button
           type="button"
           onClick={submit}
-          disabled={!text.trim()}
+          disabled={disabled || !text.trim()}
           aria-label="전송"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700"
         >

@@ -10,7 +10,7 @@ export function ProfileGate({ children }: { children: ReactNode }) {
   const profile = useAppStore((s) => s.profile);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
 
-  if (pathname.startsWith("/categories") || pathname.startsWith("/opportunities/")) return <>{children}</>;
+  if (pathname === "/search" || pathname.startsWith("/categories") || pathname.startsWith("/opportunities/")) return <>{children}</>;
 
   if (!hasHydrated) {
     return (

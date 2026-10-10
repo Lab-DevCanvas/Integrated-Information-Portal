@@ -1,8 +1,9 @@
+import { searchAI } from "../api/aiSearch";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ChatConversation, ChatMessage, Opportunity, UserProfile } from "../types";
 import { COMPARE_MAX } from "../constants";
-import { deriveConversationTitle, generateAssistantReply } from "../chat/reply";
+import { deriveConversationTitle } from "../chat/reply";
 import { fetchCrawledOpportunities } from "../api/fetchCrawledOpportunities";
 import { getActivityById } from "../api/crawlingClient";
 import { mapActivityToOpportunity } from "../api/mapActivityToOpportunity";
@@ -31,7 +32,10 @@ interface AppState {
   activeConversationId: string | null;
   startNewConversation: () => void;
   setActiveConversation: (id: string) => void;
-  sendMessage: (text: string) => void;
+  sendMessage: (text: string) => Promise<void>;
+  pendingChats: Record<string, AbortController>;
+  cancelChat: (id: string) => void;
+  retryChat: (id: string) => void;
 
   /** Live data from the crawling backend (docs/crawling-integration.md) — the app's only opportunity
    * data source, never persisted to localStorage since it's cheap to refetch and would otherwise go stale. */
@@ -90,46 +94,48 @@ export const useAppStore = create<AppState>()(
       activeConversationId: null,
       startNewConversation: () => set({ activeConversationId: null }),
       setActiveConversation: (id) => set({ activeConversationId: id }),
-      sendMessage: (text) => {
+      pendingChats: {},
+      cancelChat: (id) => get().pendingChats[id]?.abort(),
+      retryChat: (id) => {
+        const conversation = get().conversations.find((c) => c.id === id);
+        const lastUser = conversation?.messages.findLastIndex((m) => m.role === "user") ?? -1;
+        if (!conversation || lastUser < 0 || get().pendingChats[id]) return;
+        const text = conversation.messages[lastUser].text;
+        set((s) => ({ activeConversationId: id, conversations: s.conversations.map((c) => c.id === id
+          ? { ...c, messages: c.messages.slice(0, lastUser) } : c) }));
+        void get().sendMessage(text);
+      },
+      sendMessage: async (text) => {
         const state = get();
         const trimmed = text.trim();
-        if (!state.profile || !trimmed) return;
-
+        if (!trimmed || trimmed.length > 2000) return;
+        const existing = state.conversations.find((c) => c.id === state.activeConversationId);
+        const id = existing?.id ?? crypto.randomUUID();
+        if (state.pendingChats[id]) return;
+        const controller = new AbortController();
+        const previous = existing?.messages ?? [];
         const now = new Date().toISOString();
         const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", text: trimmed, createdAt: now };
-
-        let conversations = state.conversations;
-        let conversationId = state.activeConversationId;
-        const exists = conversations.some((c) => c.id === conversationId);
-
-        if (!conversationId || !exists) {
-          conversationId = crypto.randomUUID();
-          const newConversation: ChatConversation = {
-            id: conversationId,
-            title: deriveConversationTitle(trimmed),
-            messages: [],
-            updatedAt: now,
-          };
-          conversations = [newConversation, ...conversations].slice(0, MAX_CONVERSATIONS);
+        const conversation: ChatConversation = existing ?? { id, title: deriveConversationTitle(trimmed), messages: [], updatedAt: now };
+        set((s) => ({ activeConversationId: id, pendingChats: { ...s.pendingChats, [id]: controller },
+          conversations: [{ ...conversation, messages: [...previous, userMsg], updatedAt: now },
+            ...s.conversations.filter((c) => c.id !== id)].slice(0, MAX_CONVERSATIONS) }));
+        let assistant: ChatMessage;
+        try {
+          const result = await searchAI(trimmed, previous, state.profile, controller.signal);
+          if (controller.signal.aborted) throw new Error("cancelled");
+          assistant = { id: crypto.randomUUID(), role: "assistant", text: result.answer,
+            aiResult: result, resultIds: result.results.map((r) => r.detail_id), createdAt: new Date().toISOString() };
+        } catch (error) {
+          assistant = { id: crypto.randomUUID(), role: "assistant", error: true,
+            text: controller.signal.aborted ? "검색을 취소했습니다." : error instanceof Error ? error.message : "검색에 실패했습니다.",
+            createdAt: new Date().toISOString() };
         }
-
-        const allOpportunities = state.crawledOpportunities;
-        const reply = generateAssistantReply(trimmed, state.profile, state.savedIds, allOpportunities);
-        const assistantMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: reply.text,
-          resultIds: reply.resultIds,
-          createdAt: new Date().toISOString(),
-        };
-
-        conversations = conversations.map((c) =>
-          c.id === conversationId
-            ? { ...c, messages: [...c.messages, userMsg, assistantMsg], updatedAt: assistantMsg.createdAt }
-            : c,
-        );
-
-        set({ conversations, activeConversationId: conversationId });
+        set((s) => {
+          const pendingChats = { ...s.pendingChats }; delete pendingChats[id];
+          return { pendingChats, conversations: s.conversations.map((c) => c.id === id
+            ? { ...c, messages: [...c.messages, assistant], updatedAt: assistant.createdAt } : c) };
+        });
       },
 
       crawledOpportunities: [],
