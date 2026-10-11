@@ -22,9 +22,17 @@ export async function POST(request: Request) {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   const body = new TextDecoder().decode(bytes);
   try { JSON.parse(body); } catch { return Response.json({ detail: "잘못된 JSON입니다." }, { status: 400 }); }
+  const ragUrl = process.env.RAG_API_URL?.trim();
+  const token = process.env.RAG_API_TOKEN?.trim();
+  if ((process.env.VERCEL === "1" && (!ragUrl || !token)) ||
+      (token && !ragUrl?.startsWith("https://"))) {
+    return Response.json({ detail: "AI 검색 연결 설정을 확인해주세요." }, { status: 503 });
+  }
   try {
-    const response = await fetch(new URL("/ai/search", process.env.RAG_API_URL?.trim() || getCrawlingApiBaseUrl()), {
-      method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store",
+    const response = await fetch(new URL("/ai/search", ragUrl || getCrawlingApiBaseUrl()), {
+      method: "POST", headers: { "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body, cache: "no-store",
+      redirect: "error",
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(35000)]),
     });
     return new Response(await response.text(), { status: response.status,
