@@ -24,9 +24,12 @@ export function ChatPanel() {
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId) ?? null;
 
+  const isPending = Boolean(activeConversationId && pendingChats[activeConversationId]);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeConversation?.messages.length]);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    messagesEndRef.current?.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth" });
+  }, [activeConversationId, activeConversation?.messages.length, isPending]);
 
   function handleSend(text: string) {
     void sendMessage(text);
@@ -101,20 +104,26 @@ export function ChatPanel() {
         {/* Messages */}
         {activeConversation && activeConversation.messages.length > 0 ? (
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-            {activeConversation.messages.map((m) => (
-              <ChatMessageBubble key={m.id} message={m} />
+            {activeConversation.messages.map((m, index, messages) => (
+              <ChatMessageBubble
+                key={m.role === "assistant" ? `reply-${messages[index - 1]?.id ?? m.id}` : m.id}
+                message={m}
+                onRetry={m.error && index === messages.length - 1 && !isPending
+                  ? () => retryChat(activeConversation.id) : undefined}
+              />
             ))}
+            {isPending && <ChatMessageBubble
+              key={`reply-${activeConversation.messages.at(-1)?.id}`}
+              pending
+              onCancel={() => cancelChat(activeConversation.id)}
+            />}
             <div ref={messagesEndRef} />
           </div>
         ) : (
           <ChatEmptyState onSelectPrompt={handleSend} />
         )}
 
-        {activeConversationId && pendingChats[activeConversationId] && <div role="status" className="px-4 py-2 text-sm">
-          공고와 근거를 확인하고 있습니다… <button className="ml-2 underline" onClick={() => cancelChat(activeConversationId)}>취소</button>
-        </div>}
-        {activeConversation?.messages.at(-1)?.error && <button className="px-4 py-2 text-sm underline" onClick={() => retryChat(activeConversation.id)}>다시 시도</button>}
-        <ChatInputBar onSend={handleSend} disabled={Boolean(activeConversationId && pendingChats[activeConversationId])} />
+        <ChatInputBar onSend={handleSend} disabled={isPending} />
       </div>
     </div>
   );

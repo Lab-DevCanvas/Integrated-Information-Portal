@@ -240,9 +240,7 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p role="status" className="text-sm font-semibold text-slate-700 dark:text-slate-300">{isLoading ? "불러오는 중…" : error ? "조회 실패" : loadingMore || backgroundError
-          ? `전체 ${total.toLocaleString()}건 · ${allOpportunities.length.toLocaleString()}건 불러옴 · 현재 조건 ${items.length.toLocaleString()}건`
-          : `전체 ${total.toLocaleString()}건 · 조건 일치 ${items.length.toLocaleString()}건`}</p>
+        <p role="status" className="text-sm font-semibold text-slate-700 dark:text-slate-300">{isLoading ? "불러오는 중…" : error ? "조회 실패" : `전체 ${total.toLocaleString()}건`}</p>
         <select
           aria-label="정렬"
           value={sortMode}
