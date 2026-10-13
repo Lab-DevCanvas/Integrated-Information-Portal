@@ -169,3 +169,12 @@ npm run test:ui         # 브라우저 UI로 결과 보기
 crawling API 연동(HTTP 클라이언트 에러 처리, 스키마 매핑 규칙, 카테고리별 병렬 조회 + 부분 실패
 복원력 — `lib/api/*.test.ts`, 실제 네트워크 호출 없이 `fetch` mock으로 검증).
 `lib/testFixtures.ts`는 테스트용 프로필/기회 팩토리를 제공하며 테스트 글롭에 포함되지 않습니다.
+
+### AI 검색 제한 안내
+
+검색 API의 오류 코드로 안내와 재시도 버튼을 구분한다. 동시 처리·분당 초과는
+`AI_SEARCH_BUSY`·`AI_SEARCH_RATE_LIMIT`, 공급자 제한은 `AI_PROVIDER_LIMIT`이다.
+잠시 후 수동 재시도를 제공하며 자동 재호출하지 않는다. 공용 일일 한도
+`AI_SEARCH_DAILY_LIMIT`는 서비스 전체 한도임을 안내하고 즉시 재시도 버튼을 숨긴다.
+향후 사용자별 `AI_SEARCH_USER_DAILY_LIMIT`에도 별도 안내를 준비했지만 현재 서버는
+사용자별 한도를 적용하지 않는다. JSON이 아닌 프록시 429도 검색 혼잡으로 안내한다.
