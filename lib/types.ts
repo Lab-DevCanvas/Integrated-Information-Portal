@@ -236,6 +236,8 @@ export interface SearchResultItem {
 export interface ChatMessage {
   aiResult?: AISearchResult;
   error?: boolean;
+  errorCode?: string;
+  retryable?: boolean;
   id: string;
   role: "user" | "assistant";
   text: string;

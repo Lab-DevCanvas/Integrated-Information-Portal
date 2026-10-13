@@ -108,7 +108,7 @@ export function ChatPanel() {
               <ChatMessageBubble
                 key={m.role === "assistant" ? `reply-${messages[index - 1]?.id ?? m.id}` : m.id}
                 message={m}
-                onRetry={m.error && index === messages.length - 1 && !isPending
+                onRetry={m.error && m.retryable !== false && index === messages.length - 1 && !isPending
                   ? () => retryChat(activeConversation.id) : undefined}
               />
             ))}

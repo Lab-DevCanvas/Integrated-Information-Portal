@@ -27,3 +27,22 @@ it("retains actual cards across a clarification response", async () => {
   await searchAI("이 공고들 비교해줘", messages, null, new AbortController().signal);
   expect(JSON.parse(fetcher.mock.calls[0][1].body).previous_result_ids).toEqual(["a".repeat(24)]);
 });
+
+
+it.each([
+  ["AI_SEARCH_BUSY", "현재 검색 요청이 많습니다", true, 429],
+  ["AI_SEARCH_RATE_LIMIT", "현재 검색 요청이 많습니다", true, 429],
+  ["AI_SEARCH_DAILY_LIMIT", "오늘 서비스 전체의 검색 사용량 한도에 도달했습니다. 내일 다시 이용해주세요.", false, 429],
+  ["AI_SEARCH_USER_DAILY_LIMIT", "오늘 사용 가능한 검색 횟수를 모두 사용했습니다", false, 429],
+  ["AI_PROVIDER_LIMIT", "AI 서비스가 일시적으로 요청을 처리하지 못하고 있습니다", true, 503],
+])("handles %s without retrying automatically", async (code, message, retryable, status) => {
+  const fetcher = vi.fn().mockResolvedValue(Response.json({ code, detail: "fallback" }, { status: Number(status) }));
+  vi.stubGlobal("fetch", fetcher);
+  await expect(searchAI("추천", [], null, new AbortController().signal)).rejects.toMatchObject({ message, code, retryable });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it("handles a non-JSON proxy rate limit", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("busy", { status: 429 })));
+  await expect(searchAI("추천", [], null, new AbortController().signal)).rejects.toThrow("현재 검색 요청이 많습니다");
+});

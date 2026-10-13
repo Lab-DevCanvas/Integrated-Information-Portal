@@ -128,6 +128,8 @@ export const useAppStore = create<AppState>()(
             aiResult: result, resultIds: result.results.map((r) => r.detail_id), createdAt: new Date().toISOString() };
         } catch (error) {
           assistant = { id: crypto.randomUUID(), role: "assistant", error: true,
+            errorCode: error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : undefined,
+            retryable: controller.signal.aborted || !(error instanceof Error && "retryable" in error && error.retryable === false),
             text: controller.signal.aborted ? "검색을 취소했습니다." : error instanceof Error ? error.message : "검색에 실패했습니다.",
             createdAt: new Date().toISOString() };
         }

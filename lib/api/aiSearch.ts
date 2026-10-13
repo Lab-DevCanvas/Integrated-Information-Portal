@@ -14,6 +14,21 @@ export interface AISearchResult {
   plan: { detail_id: string; action: string; suggested_date: string | null; citation_ids: string[] }[];
 }
 
+const searchErrors: Record<string, { message: string; retryable: boolean }> = {
+  AI_SEARCH_BUSY: { message: "현재 검색 요청이 많습니다", retryable: true },
+  AI_SEARCH_RATE_LIMIT: { message: "현재 검색 요청이 많습니다", retryable: true },
+  AI_SEARCH_DAILY_LIMIT: { message: "오늘 서비스 전체의 검색 사용량 한도에 도달했습니다. 내일 다시 이용해주세요.", retryable: false },
+  AI_SEARCH_USER_DAILY_LIMIT: { message: "오늘 사용 가능한 검색 횟수를 모두 사용했습니다", retryable: false },
+  AI_PROVIDER_LIMIT: { message: "AI 서비스가 일시적으로 요청을 처리하지 못하고 있습니다", retryable: true },
+};
+
+export class AISearchError extends Error {
+  constructor(message: string, public readonly code: string, public readonly retryable: boolean) {
+    super(message);
+    this.name = "AISearchError";
+  }
+}
+
 export async function searchAI(message: string, messages: ChatMessage[], profile: UserProfile | null,
   signal: AbortSignal): Promise<AISearchResult> {
   const previous = messages.filter((m) => m.role === "assistant" && m.aiResult?.results.length).at(-1)?.aiResult;
@@ -29,7 +44,11 @@ export async function searchAI(message: string, messages: ChatMessage[], profile
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(typeof body.detail === "string" ? body.detail : "AI 검색 요청에 실패했습니다.");
+    const code = typeof body?.code === "string" ? body.code : "";
+    const known = searchErrors[code];
+    throw new AISearchError(known?.message ?? (typeof body?.detail === "string" ? body.detail
+      : response.status === 429 ? "현재 검색 요청이 많습니다" : "AI 검색 요청에 실패했습니다."),
+      code, known?.retryable ?? true);
   }
   return response.json();
 }

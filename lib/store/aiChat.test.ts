@@ -30,3 +30,14 @@ it("keeps a cancellation visible and retryable", async () => {
   expect(useAppStore.getState().conversations[0].messages.at(-1)?.error).toBe(true);
   expect(useAppStore.getState().pendingChats).toEqual({});
 });
+
+
+it("preserves a daily limit and disables immediate retry", async () => {
+  search.mockRejectedValue(Object.assign(new Error("오늘 사용 가능한 검색 횟수를 모두 사용했습니다"),
+    { code: "AI_SEARCH_USER_DAILY_LIMIT", retryable: false }));
+  await useAppStore.getState().sendMessage("추천");
+  expect(useAppStore.getState().conversations[0].messages.at(-1)).toMatchObject({
+    error: true, errorCode: "AI_SEARCH_USER_DAILY_LIMIT", retryable: false,
+  });
+  expect(useAppStore.getState().pendingChats).toEqual({});
+});
