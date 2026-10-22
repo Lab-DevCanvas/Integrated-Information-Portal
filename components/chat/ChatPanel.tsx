@@ -14,12 +14,14 @@ export function ChatPanel() {
   const activeConversationId = useAppStore((s) => s.activeConversationId);
   const startNewConversation = useAppStore((s) => s.startNewConversation);
   const setActiveConversation = useAppStore((s) => s.setActiveConversation);
+  const pendingProgress = useAppStore((s) => s.pendingProgress);
   const pendingChats = useAppStore((s) => s.pendingChats);
   const cancelChat = useAppStore((s) => s.cancelChat);
   const retryChat = useAppStore((s) => s.retryChat);
   const sendMessage = useAppStore((s) => s.sendMessage);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const latestReplyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId) ?? null;
@@ -28,7 +30,8 @@ export function ChatPanel() {
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    messagesEndRef.current?.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth" });
+    const target = !isPending && latestReplyRef.current ? latestReplyRef.current : messagesEndRef.current;
+    target?.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth", block: "start" });
   }, [activeConversationId, activeConversation?.messages.length, isPending]);
 
   function handleSend(text: string) {
@@ -108,6 +111,7 @@ export function ChatPanel() {
               <ChatMessageBubble
                 key={m.role === "assistant" ? `reply-${messages[index - 1]?.id ?? m.id}` : m.id}
                 message={m}
+                anchorRef={m.role === "assistant" && index === messages.length - 1 ? latestReplyRef : undefined}
                 onRetry={m.error && m.retryable !== false && index === messages.length - 1 && !isPending
                   ? () => retryChat(activeConversation.id) : undefined}
               />
@@ -115,6 +119,7 @@ export function ChatPanel() {
             {isPending && <ChatMessageBubble
               key={`reply-${activeConversation.messages.at(-1)?.id}`}
               pending
+              stages={pendingProgress[activeConversation.id]}
               onCancel={() => cancelChat(activeConversation.id)}
             />}
             <div ref={messagesEndRef} />

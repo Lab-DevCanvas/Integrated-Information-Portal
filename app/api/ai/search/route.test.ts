@@ -58,3 +58,16 @@ it("never sends a secret over plaintext HTTP", async () => {
   expect((await POST(searchRequest())).status).toBe(503);
   expect(fetcher).not.toHaveBeenCalled();
 });
+
+
+it("forwards the event stream without waiting for its completion", async () => {
+  const stream = new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('event: progress\ndata: {"stage":"searching"}\n\n')); } });
+  const fetcher = vi.fn().mockResolvedValue(new Response(stream, { headers: { "Content-Type": "text/event-stream" } }));
+  vi.stubGlobal("fetch", fetcher);
+  const response = await POST(new Request("http://localhost/api/ai/search", { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream" }, body: JSON.stringify({ message: "추천" }) }));
+  expect(fetcher.mock.calls[0][1].headers.Accept).toBe("text/event-stream");
+  expect(response.headers.get("content-type")).toBe("text/event-stream");
+  const reader = response.body!.getReader();
+  expect(new TextDecoder().decode((await reader.read()).value)).toContain("searching");
+  await reader.cancel();
+});

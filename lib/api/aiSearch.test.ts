@@ -46,3 +46,26 @@ it("handles a non-JSON proxy rate limit", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("busy", { status: 429 })));
   await expect(searchAI("추천", [], null, new AbortController().signal)).rejects.toThrow("현재 검색 요청이 많습니다");
 });
+
+
+it("streams fragmented Korean progress before a verified result", async () => {
+  const text = 'event: progress\ndata: {"stage":"filtering"}\n\n: keepalive\n\nevent: result\ndata: {"answer":"추천 결과","results":[]}\n\n';
+  const bytes = new TextEncoder().encode(text);
+  const progress = vi.fn();
+  const stream = new ReadableStream({ start(controller) {
+    for (let i = 0; i < bytes.length; i += 7) controller.enqueue(bytes.slice(i, i + 7));
+    controller.close();
+  } });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(stream, { headers: { "Content-Type": "text/event-stream" } })));
+  const result = await searchAI("추천", [], null, new AbortController().signal, progress);
+  expect(progress).toHaveBeenCalledWith("filtering");
+  expect(result.answer).toBe("추천 결과");
+});
+
+it.each([
+  ['event: error\ndata: {"code":"AI_SEARCH_DAILY_LIMIT","detail":"fallback"}\n\n', '오늘 서비스 전체의 검색 사용량 한도'],
+  ['event: progress\ndata: {"stage":"searching"}\n\n', '검색 연결이 끊어졌습니다'],
+])("handles streaming failures without treating them as answers", async (body, expected) => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { headers: { "Content-Type": "text/event-stream" } })));
+  await expect(searchAI("추천", [], null, new AbortController().signal)).rejects.toThrow(expected);
+});

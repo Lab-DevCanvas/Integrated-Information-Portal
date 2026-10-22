@@ -31,12 +31,13 @@ export async function POST(request: Request) {
   try {
     const response = await fetch(new URL("/ai/search", ragUrl || getCrawlingApiBaseUrl()), {
       method: "POST", headers: { "Content-Type": "application/json",
+        Accept: request.headers.get("accept")?.includes("text/event-stream") ? "text/event-stream" : "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body, cache: "no-store",
       redirect: "error",
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(35000)]),
     });
-    return new Response(await response.text(), { status: response.status,
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    return new Response(response.body, { status: response.status,
+      headers: { "Content-Type": response.headers.get("content-type") ?? "application/json", "Cache-Control": "no-store, no-transform", "X-Accel-Buffering": "no" } });
   } catch {
     return Response.json({ detail: "AI 검색 서버에 연결하지 못했습니다. 다시 시도해주세요." }, { status: 502 });
   }

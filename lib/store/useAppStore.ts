@@ -1,4 +1,4 @@
-import { searchAI } from "../api/aiSearch";
+import { searchAI, type SearchStage } from "../api/aiSearch";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ChatConversation, ChatMessage, Opportunity, UserProfile } from "../types";
@@ -34,6 +34,7 @@ interface AppState {
   setActiveConversation: (id: string) => void;
   sendMessage: (text: string) => Promise<void>;
   pendingChats: Record<string, AbortController>;
+  pendingProgress: Record<string, SearchStage[]>;
   cancelChat: (id: string) => void;
   retryChat: (id: string) => void;
 
@@ -95,6 +96,7 @@ export const useAppStore = create<AppState>()(
       startNewConversation: () => set({ activeConversationId: null }),
       setActiveConversation: (id) => set({ activeConversationId: id }),
       pendingChats: {},
+      pendingProgress: {},
       cancelChat: (id) => get().pendingChats[id]?.abort(),
       retryChat: (id) => {
         const conversation = get().conversations.find((c) => c.id === id);
@@ -118,11 +120,16 @@ export const useAppStore = create<AppState>()(
         const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", text: trimmed, createdAt: now };
         const conversation: ChatConversation = existing ?? { id, title: deriveConversationTitle(trimmed), messages: [], updatedAt: now };
         set((s) => ({ activeConversationId: id, pendingChats: { ...s.pendingChats, [id]: controller },
+          pendingProgress: { ...s.pendingProgress, [id]: [] },
           conversations: [{ ...conversation, messages: [...previous, userMsg], updatedAt: now },
             ...s.conversations.filter((c) => c.id !== id)].slice(0, MAX_CONVERSATIONS) }));
         let assistant: ChatMessage;
         try {
-          const result = await searchAI(trimmed, previous, state.profile, controller.signal);
+          const result = await searchAI(trimmed, previous, state.profile, controller.signal, (stage) => {
+            if (controller.signal.aborted || get().pendingChats[id] !== controller) return;
+            set((s) => ({ pendingProgress: { ...s.pendingProgress,
+              [id]: [...(s.pendingProgress[id] ?? []).filter((value) => value !== stage), stage] } }));
+          });
           if (controller.signal.aborted) throw new Error("cancelled");
           assistant = { id: crypto.randomUUID(), role: "assistant", text: result.answer,
             aiResult: result, resultIds: result.results.map((r) => r.detail_id), createdAt: new Date().toISOString() };
@@ -135,7 +142,8 @@ export const useAppStore = create<AppState>()(
         }
         set((s) => {
           const pendingChats = { ...s.pendingChats }; delete pendingChats[id];
-          return { pendingChats, conversations: s.conversations.map((c) => c.id === id
+          const pendingProgress = { ...s.pendingProgress }; delete pendingProgress[id];
+          return { pendingChats, pendingProgress, conversations: s.conversations.map((c) => c.id === id
             ? { ...c, messages: [...c.messages, assistant], updatedAt: assistant.createdAt } : c) };
         });
       },

@@ -41,3 +41,23 @@ it("preserves a daily limit and disables immediate retry", async () => {
   });
   expect(useAppStore.getState().pendingChats).toEqual({});
 });
+
+
+it("keeps progress per conversation and ignores it after cancellation", async () => {
+  let report!: (stage: string) => void;
+  search.mockImplementation((_m, _h, _p, signal: AbortSignal, progress) => new Promise((_resolve, reject) => {
+    report = progress;
+    signal.addEventListener("abort", () => reject(new Error("aborted")));
+  }));
+  const pending = useAppStore.getState().sendMessage("추천");
+  const id = useAppStore.getState().activeConversationId!;
+  report("searching");
+  useAppStore.getState().startNewConversation();
+  report("filtering");
+  expect(useAppStore.getState().pendingProgress[id]).toEqual(["searching", "filtering"]);
+  expect(useAppStore.getState().activeConversationId).toBeNull();
+  useAppStore.getState().cancelChat(id);
+  report("generating");
+  await pending;
+  expect(useAppStore.getState().pendingProgress[id]).toBeUndefined();
+});
