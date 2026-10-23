@@ -18,12 +18,14 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+    <header className="sticky top-0 z-40 shrink-0 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
       <div className="mx-auto grid max-w-7xl grid-cols-3 items-center gap-4 px-4 py-3">
         <Link href="/" className="col-start-1 flex shrink-0 items-center justify-self-start">
           <Image src="/assets/logo/logo.svg" alt="OPFINDE" width={28} height={28} className="md:hidden" priority />
           <Wordmark className="hidden text-2xl md:inline-flex" />
         </Link>
+
+        {pathname === "/search" && <span className="col-start-2 row-start-1 text-center text-sm font-semibold md:hidden">AI 검색</span>}
 
         {/* Desktop/web nav — hidden below md, replaced by BottomTabBar on mobile */}
         <nav className="col-start-2 hidden items-center justify-center gap-1 overflow-x-auto overflow-y-visible md:flex">

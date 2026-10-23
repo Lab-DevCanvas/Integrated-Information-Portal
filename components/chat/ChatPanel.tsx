@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, PanelLeftClose, PanelLeftOpen, SquarePen } from "lucide-react";
 import Image from "next/image";
 import { useAppStore } from "@/lib/store/useAppStore";
 import { ChatEmptyState } from "./ChatEmptyState";
@@ -20,7 +20,9 @@ export function ChatPanel() {
   const retryChat = useAppStore((s) => s.retryChat);
   const sendMessage = useAppStore((s) => s.sendMessage);
 
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const drawerRef = useRef<HTMLDialogElement>(null);
   const latestReplyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +35,11 @@ export function ChatPanel() {
     const target = !isPending && latestReplyRef.current ? latestReplyRef.current : messagesEndRef.current;
     target?.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth", block: "start" });
   }, [activeConversationId, activeConversation?.messages.length, isPending]);
+
+  useEffect(() => {
+    if (sidebarOpen) drawerRef.current?.showModal();
+    else drawerRef.current?.close();
+  }, [sidebarOpen]);
 
   function handleSend(text: string) {
     void sendMessage(text);
@@ -49,46 +56,54 @@ export function ChatPanel() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-17rem)] min-h-[420px] overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:h-[calc(100vh-13rem)]">
+    <div className="relative flex min-h-0 flex-1 overflow-hidden bg-white dark:bg-slate-900">
       {/* Desktop sidebar */}
-      <div className="hidden w-72 shrink-0 border-r border-slate-200 dark:border-slate-800 lg:block">
+      <aside aria-label="대화 목록" className={`${desktopSidebarOpen ? "lg:block" : ""} hidden w-72 shrink-0 border-r border-slate-200 dark:border-slate-800`}>
         <ChatSidebar
           conversations={conversations}
           activeConversationId={activeConversationId}
           onSelect={handleSelect}
           onNewChat={handleNewChat}
         />
-      </div>
+      </aside>
 
       {/* Mobile sidebar drawer */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+      <dialog
+        ref={drawerRef}
+        onCancel={() => setSidebarOpen(false)}
+        onClick={(event) => { if (event.target === event.currentTarget) setSidebarOpen(false); }}
+        aria-label="대화 목록"
+        className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 backdrop:bg-slate-950/40"
+      >
+        <div className="h-full w-80 max-w-[85%] shadow-xl">
+          <ChatSidebar
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onSelect={handleSelect}
+            onNewChat={handleNewChat}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </div>
+      </dialog>
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {/* Chat header */}
+        <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
           <button
             type="button"
-            aria-label="대화 목록 닫기"
-            className="absolute inset-0 bg-slate-900/50"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="absolute inset-y-0 left-0 w-80 max-w-[85%] shadow-xl">
-            <ChatSidebar
-              conversations={conversations}
-              activeConversationId={activeConversationId}
-              onSelect={handleSelect}
-              onNewChat={handleNewChat}
-              onClose={() => setSidebarOpen(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Chat header */}
-        <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+            onClick={() => setDesktopSidebarOpen((open) => !open)}
+            aria-label={desktopSidebarOpen ? "사이드바 접기" : "사이드바 펼치기"}
+            aria-expanded={desktopSidebarOpen}
+            className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:flex"
+          >
+            {desktopSidebarOpen ? <PanelLeftClose className="h-5 w-5" /> : <PanelLeftOpen className="h-5 w-5" />}
+          </button>
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
             aria-label="대화 목록 열기"
-            className="text-slate-400 hover:text-slate-600 lg:hidden dark:text-slate-500 dark:hover:text-slate-300"
+            aria-expanded={sidebarOpen}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 lg:hidden dark:text-slate-500 dark:hover:text-slate-300"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -102,11 +117,14 @@ export function ChatPanel() {
               공고 근거로 추천·비교·지원 계획
             </p>
           </div>
+          <button type="button" onClick={handleNewChat} aria-label="새 대화" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <SquarePen className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Messages */}
         {activeConversation && activeConversation.messages.length > 0 ? (
-          <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-6 sm:px-8 lg:px-12">
             {activeConversation.messages.map((m, index, messages) => (
               <ChatMessageBubble
                 key={m.role === "assistant" ? `reply-${messages[index - 1]?.id ?? m.id}` : m.id}

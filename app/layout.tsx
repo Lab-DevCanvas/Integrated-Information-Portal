@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { ProfileGate } from "@/components/layout/ProfileGate";
-import { CompareTray } from "@/components/layout/CompareTray";
-import { SearchFab } from "@/components/layout/SearchFab";
-import { BottomTabBar } from "@/components/layout/BottomTabBar";
+import { AppShell } from "@/components/layout/AppShell";
 import { ThemeEffect } from "@/components/layout/ThemeEffect";
-import { CrawlingStatus } from "@/components/layout/CrawlingStatus";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,14 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col bg-background text-foreground" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeEffect />
-        <Header />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-40 md:pb-24">
-          <CrawlingStatus />
-          <ProfileGate>{children}</ProfileGate>
-        </main>
-        <CompareTray />
-        <SearchFab />
-        <BottomTabBar />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

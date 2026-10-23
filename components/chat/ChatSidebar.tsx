@@ -25,8 +25,8 @@ export function ChatSidebar({ conversations, activeConversationId, onSelect, onN
           <button
             type="button"
             onClick={onClose}
-            aria-label="닫기"
-            className="text-slate-400 hover:text-slate-600 md:hidden dark:text-slate-500 dark:hover:text-slate-300"
+            aria-label="대화 목록 닫기"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
           >
             <X className="h-5 w-5" />
           </button>
@@ -45,9 +45,10 @@ export function ChatSidebar({ conversations, activeConversationId, onSelect, onN
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        {conversations.length > 0 && (
+        {(
           <p className="mb-1 px-2 text-xs font-semibold text-slate-400 dark:text-slate-500">최근 대화</p>
         )}
+        {conversations.length === 0 && <p className="px-2 py-4 text-xs leading-6 text-slate-400">새로운 기회를 찾는 첫 대화를 시작해 보세요.</p>}
         <div className="space-y-0.5">
           {conversations.map((c) => (
             <button
