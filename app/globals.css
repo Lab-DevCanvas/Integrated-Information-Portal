@@ -9,8 +9,23 @@
 }
 
 :root.dark {
-  --background: #0b1120;
-  --foreground: #f1f5f9;
+  --background: #111111;
+  --foreground: #f5f5f5;
+
+  /* Neutral surfaces and text, scoped to dark mode. */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f5f5f5;
+  --color-slate-200: #e5e5e5;
+  --color-slate-300: #d4d4d4;
+  --color-slate-400: #a3a3a3;
+  --color-slate-500: #737373;
+  --color-slate-600: #525252;
+  --color-slate-700: #404040;
+  --color-slate-800: #292929;
+  --color-slate-900: #1c1c1c;
+  --color-slate-950: #0a0a0a;
+
+  /* Keep the primary indigo palette and semantic status colors for emphasis. */
 }
 
 @theme inline {
