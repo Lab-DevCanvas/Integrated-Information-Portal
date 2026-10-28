@@ -1,9 +1,10 @@
 "use client";
 
-import type { Ref } from "react";
+import { useState, type Ref } from "react";
 import Link from "next/link";
-import { LoaderCircle, RotateCcw, Check, Sparkles } from "lucide-react";
+import { LoaderCircle, RotateCcw, Check, Sparkles, Columns3, Plus } from "lucide-react";
 import { searchStages, type SearchStage } from "@/lib/api/aiSearch";
+import { ChatComparisonTable } from "./ChatComparisonTable";
 import type { ChatMessage } from "@/lib/types";
 
 const regionLabels: Record<string, string> = { SEOUL: "서울", BUSAN: "부산", DAEGU: "대구", INCHEON: "인천", GWANGJU: "광주", DAEJEON: "대전", ULSAN: "울산", SEJONG: "세종", GYEONGGI: "경기", GANGWON: "강원", CHUNGBUK: "충북", CHUNGNAM: "충남", JEONBUK: "전북", JEONNAM: "전남", GYEONGBUK: "경북", GYEONGNAM: "경남", JEJU: "제주", NATIONWIDE: "전국" };
@@ -16,10 +17,21 @@ type Props = {
   stages?: SearchStage[];
   onCancel?: () => void;
   onRetry?: () => void;
+  onCompare?: (ids: string[]) => void;
+  compareDisabled?: boolean;
 };
 
-export function ChatMessageBubble({ message, anchorRef, pending = false, stages = [], onCancel, onRetry }: Props) {
+export function ChatMessageBubble({ message, anchorRef, pending = false, stages = [], onCancel, onRetry, onCompare, compareDisabled }: Props) {
   const result = message?.aiResult;
+  const [excludedByMessage, setExcludedByMessage] = useState<Record<string, string[]>>({});
+  const selectionKey = message?.id ?? "pending";
+  const excluded = excludedByMessage[selectionKey] ?? [];
+  const selectedIds = result?.results.filter((card) => !excluded.includes(card.detail_id)).map((card) => card.detail_id) ?? [];
+  const canSelect = Boolean(result && result.results.length >= 2 && onCompare && result.mode !== "compare");
+  function setExcluded(ids: string[]) {
+    setExcludedByMessage((current) => ({ ...current, [selectionKey]: ids }));
+  }
+  const isComparison = result?.mode === "compare";
   const isUser = message?.role === "user";
   const isError = message?.error;
   const actionClass = "inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-current/20 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:bg-white/10";
@@ -43,6 +55,10 @@ export function ChatMessageBubble({ message, anchorRef, pending = false, stages 
         </div>
       ) : (
         <div key={message?.id} className="chat-message-enter flex flex-wrap items-center gap-x-3 gap-y-2">
+          {Boolean(result?.results.length) && !isError && <div className="w-full space-y-1">
+            <p className="text-base font-bold text-slate-900 dark:text-white">{isComparison ? `${result!.results.length}개 공고를 비교했어요` : `관련 공고 ${result!.results.length}개를 찾았어요`}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{isComparison ? "같은 기준으로 살펴보고 나에게 맞는 기회를 골라보세요." : "각 공고를 추천하는 이유와 지원 전 확인할 내용을 정리했어요."}</p>
+          </div>}
           <p role={isError ? "alert" : undefined} className="min-w-0 whitespace-pre-wrap break-words leading-7">{message?.text}</p>
           {isError && onRetry && <button type="button" className={actionClass} onClick={onRetry}>
             <RotateCcw aria-hidden className="h-3.5 w-3.5" />다시 시도
@@ -51,8 +67,30 @@ export function ChatMessageBubble({ message, anchorRef, pending = false, stages 
       )}
     </div>
     {result?.warnings.map((warning) => <p key={warning} className="text-xs text-amber-700 dark:text-amber-300">{warning}</p>)}
-    {Boolean(result?.results.length) && <div className="flex items-center justify-between pt-2"><h3 className="text-sm font-semibold">추천 공고 <span className="text-indigo-600 dark:text-indigo-300">{result?.results.length}</span></h3><span className="text-xs text-slate-500">조건과 원문을 확인해 주세요</span></div>}
-    {result?.results.map((card, index) => <div key={card.detail_id} className="chat-message-enter rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors motion-reduce:transition-none sm:p-5 dark:border-slate-700 dark:bg-slate-900">
+    {!isComparison && Boolean(result?.results.length) && <div className="flex items-center justify-between pt-2"><h3 className="text-sm font-semibold">추천 공고 <span className="text-indigo-600 dark:text-indigo-300">{result?.results.length}</span></h3><span className="text-xs text-slate-500">조건과 원문을 확인해 주세요</span></div>}
+    {canSelect && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs dark:bg-slate-800">
+      <span role="status" aria-live="polite">비교할 공고 {selectedIds.length}개 선택</span>
+      <div className="flex gap-3">
+        <button type="button" disabled={compareDisabled} onClick={() => setExcluded([])} className="py-2 font-medium text-indigo-600 disabled:opacity-50 dark:text-indigo-300">전체 선택</button>
+        <button type="button" disabled={compareDisabled} onClick={() => setExcluded(result!.results.map((card) => card.detail_id))} className="py-2 text-slate-500 disabled:opacity-50">전체 해제</button>
+      </div>
+    </div>}
+    {!isComparison && result?.results.map((card, index) => <div key={card.detail_id}
+      className={`chat-message-enter rounded-2xl border p-4 shadow-sm transition-colors duration-200 motion-reduce:transition-none sm:p-5 ${canSelect && !excluded.includes(card.detail_id)
+        ? "border-indigo-300 bg-indigo-50/40 ring-1 ring-indigo-200/60 dark:border-indigo-500/60 dark:bg-indigo-950/25 dark:ring-indigo-500/15"
+        : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"}`}>
+      {canSelect && <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-[11px] font-semibold tracking-widest text-slate-400">공고 {String(index + 1).padStart(2, "0")}</span>
+        <button type="button" aria-pressed={!excluded.includes(card.detail_id)} disabled={compareDisabled}
+          aria-label={`${index + 1}. ${card.title} 비교에 담기`}
+          onClick={() => setExcluded(excluded.includes(card.detail_id) ? excluded.filter((id) => id !== card.detail_id) : [...excluded, card.detail_id])}
+          className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${!excluded.includes(card.detail_id)
+            ? "bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            : "bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"}`}>
+          {!excluded.includes(card.detail_id) ? <Check aria-hidden className="h-3.5 w-3.5" /> : <Plus aria-hidden className="h-3.5 w-3.5" />}
+          {excluded.includes(card.detail_id) ? "비교에 담기" : "비교에 담김"}
+        </button>
+      </div>}
       <Link className="block text-base font-semibold leading-relaxed text-indigo-700 hover:underline dark:text-indigo-300" href={`/opportunities/${encodeURIComponent(card.detail_id)}`}>{index + 1}. {card.title}</Link>
       <p className="text-xs text-slate-500">{card.organization ?? "기관 미상"} · {card.period_end ? `마감 ${card.period_end}` : "마감일 미상"}</p>
       <p className="mt-3 rounded-lg bg-indigo-50/70 px-3 py-2 text-sm leading-6 dark:bg-indigo-950/40">{card.recommendation_reason}</p>
@@ -68,13 +106,12 @@ export function ChatMessageBubble({ message, anchorRef, pending = false, stages 
         </p>)}
       </details>}
     </div>)}
-    {Boolean(result?.comparisons.length) && <section className="space-y-2 text-sm" aria-label="공고 비교">
-      <h3 className="font-semibold">공고 비교</h3>
-      {result?.comparisons.map((row) => <div key={row.detail_id} className="rounded-lg border p-3">
-        <p className="font-medium">{result.results.find((r) => r.detail_id === row.detail_id)?.title}</p>
-        <p>{row.advantages}</p><p className="text-slate-500">확인할 점: {row.cautions}</p>
-      </div>)}
-    </section>}
+    {!isComparison && result && result.results.length >= 2 && onCompare && <div className="space-y-2"><button type="button"
+      disabled={compareDisabled || selectedIds.length < 2} onClick={() => onCompare(selectedIds)}
+      className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
+      <Columns3 aria-hidden className="h-4 w-4" />선택한 공고 비교하기 · {selectedIds.length}개
+    </button><p className="text-xs text-slate-500">비교할 공고를 2개 이상 선택해 주세요. 하나만 살펴보려면 공고 제목을 눌러주세요.</p></div>}
+    {isComparison && result && result.results.length > 0 && <ChatComparisonTable result={result} />}
     {Boolean(result?.plan.length) && <section className="text-sm" aria-label="지원 계획">
       <h3 className="font-semibold">지원 계획 제안</h3>
       <ol className="list-decimal space-y-2 pl-5">{result?.plan.map((step, i) => <li key={i}>

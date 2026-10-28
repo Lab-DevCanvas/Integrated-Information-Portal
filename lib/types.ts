@@ -243,6 +243,8 @@ export interface ChatMessage {
   text: string;
   /** opportunity ids referenced by this message, rendered as compact result cards */
   resultIds?: string[];
+  /** Explicit comparison targets, retained for retry independently of later answers. */
+  comparisonTargetIds?: string[];
   createdAt: string;
 }
 

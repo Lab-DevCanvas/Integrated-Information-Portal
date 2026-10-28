@@ -30,7 +30,7 @@ export class AISearchError extends Error {
 }
 
 export async function searchAI(message: string, messages: ChatMessage[], profile: UserProfile | null,
-  signal: AbortSignal, onProgress?: (stage: SearchStage) => void): Promise<AISearchResult> {
+  signal: AbortSignal, onProgress?: (stage: SearchStage) => void, targetIds?: string[]): Promise<AISearchResult> {
   const previous = messages.filter((m) => m.role === "assistant" && m.aiResult?.results.length).at(-1)?.aiResult;
   const regions: Record<string, string> = { 서울: "SEOUL", 부산: "BUSAN", 대구: "DAEGU", 인천: "INCHEON",
     광주: "GWANGJU", 대전: "DAEJEON", 울산: "ULSAN", 세종: "SEJONG", 경기: "GYEONGGI", 강원: "GANGWON",
@@ -38,7 +38,7 @@ export async function searchAI(message: string, messages: ChatMessage[], profile
   const response = await fetch("/api/ai/search", {
     method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream" }, signal,
     body: JSON.stringify({ message, history: messages.filter((m) => !m.error).slice(-6).map((m) => ({ role: m.role, text: m.text.slice(0, 2000) })),
-      previous_result_ids: previous?.results.map((r) => r.detail_id) ?? [],
+      previous_result_ids: targetIds ?? previous?.results.map((r) => r.detail_id) ?? [],
       profile: profile ? { age: profile.age, region: regions[profile.region],
         education: profile.educationStatus, employment: profile.employmentStatus, income: profile.incomePercentile } : null }),
   });

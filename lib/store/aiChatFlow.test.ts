@@ -52,3 +52,33 @@ it("does not carry result IDs or history into a new conversation", async () => {
   expect(request.history).toEqual([]);
   expect(useAppStore.getState().conversations).toHaveLength(2);
 });
+
+it("compares an older answer's exact targets and preserves them on retry", async () => {
+  const newer = ["c".repeat(24), "d".repeat(24)];
+  const fetcher = vi.fn()
+    .mockResolvedValueOnce(Response.json(result("recommend")))
+    .mockResolvedValueOnce(Response.json(result("recommend", newer)))
+    .mockResolvedValueOnce(Response.json({ detail: "일시 오류" }, { status: 503 }))
+    .mockResolvedValueOnce(Response.json(result("compare")));
+  vi.stubGlobal("fetch", fetcher);
+  await useAppStore.getState().sendMessage("추천해줘");
+  await useAppStore.getState().sendMessage("다른 공고 찾아줘");
+  await useAppStore.getState().sendMessage("이 공고들 비교해줘", ids);
+  expect(JSON.parse(fetcher.mock.calls[2][1].body).previous_result_ids).toEqual(ids);
+  const state = useAppStore.getState();
+  expect(state.conversations[0].messages.at(-2)?.comparisonTargetIds).toEqual(ids);
+  state.retryChat(state.activeConversationId!);
+  await vi.waitFor(() => expect(useAppStore.getState().pendingChats).toEqual({}));
+  expect(JSON.parse(fetcher.mock.calls[3][1].body).previous_result_ids).toEqual(ids);
+  expect(useAppStore.getState().conversations[0].messages.at(-1)?.aiResult?.mode).toBe("compare");
+});
+
+it("rejects single-target comparisons and duplicate requests while pending", async () => {
+  const fetcher = vi.fn().mockImplementation(() => new Promise(() => {}));
+  vi.stubGlobal("fetch", fetcher);
+  await useAppStore.getState().sendMessage("이 공고들 비교해줘", [ids[0], ids[0]]);
+  expect(fetcher).not.toHaveBeenCalled();
+  void useAppStore.getState().sendMessage("이 공고들 비교해줘", ids);
+  await useAppStore.getState().sendMessage("이 공고들 비교해줘", ids);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});

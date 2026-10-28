@@ -129,6 +129,8 @@ export function ChatPanel() {
               <ChatMessageBubble
                 key={m.role === "assistant" ? `reply-${messages[index - 1]?.id ?? m.id}` : m.id}
                 message={m}
+                compareDisabled={isPending}
+                onCompare={(ids) => { void sendMessage("이 공고들 비교해줘", ids); }}
                 anchorRef={m.role === "assistant" && index === messages.length - 1 ? latestReplyRef : undefined}
                 onRetry={m.error && m.retryable !== false && index === messages.length - 1 && !isPending
                   ? () => retryChat(activeConversation.id) : undefined}
