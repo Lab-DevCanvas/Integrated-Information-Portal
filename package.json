@@ -9,9 +9,12 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "auth:sync": "node scripts/sync-auth-config.mjs",
+    "dev:auth-api": "node scripts/dev-auth-backend.mjs"
   },
   "dependencies": {
+    "@kang_the_conquoror/crawling-sdk": "^5.0.2",
     "lucide-react": "^1.33.0",
     "next": "16.3.2",
     "react": "19.2.8",

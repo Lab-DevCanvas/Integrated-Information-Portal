@@ -23,6 +23,10 @@ export interface ProfileCompletion {
 }
 
 export function getProfileCompletion(profile: UserProfile): ProfileCompletion {
+  if (profile.accountProfile) {
+    const value = profile.accountProfile.completeness;
+    return { filledCount: value.filled, totalCount: value.total, percent: value.ratio, missingLabels: value.missing.map((key) => ({ age_band: "연령대", residence_regions: "거주 지역", activity_regions: "활동 가능 지역", education_stage: "학력", employment_status: "현재 상태", income_band: "소득 구간", interest_categories: "관심 분야", interest_regions: "관심 지역", activity_mode: "선호 활동 방식" }[key] ?? key)), isComplete: value.missing.length === 0 };
+  }
   const missing = COMPLETION_FIELDS.filter((f) => !f.isFilled(profile));
   const filledCount = COMPLETION_FIELDS.length - missing.length;
   return {

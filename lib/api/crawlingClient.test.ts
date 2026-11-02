@@ -18,9 +18,9 @@ describe("getCrawlingApiBaseUrl", () => {
     else process.env.NEXT_PUBLIC_CRAWLING_API_URL = original;
   });
 
-  it("falls back to the known deployment IP when unset", () => {
+  it("falls back to the deployment HTTPS origin when unset", () => {
     delete process.env.NEXT_PUBLIC_CRAWLING_API_URL;
-    expect(getCrawlingApiBaseUrl()).toBe("http://34.59.75.165:8000");
+    expect(getCrawlingApiBaseUrl()).toBe("https://integrated-info.kro.kr");
   });
 
   it("uses the env override when set", () => {

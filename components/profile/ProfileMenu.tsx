@@ -2,23 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useRouter } from "next/navigation";
+import { Settings, LogOut } from "lucide-react";
 import { NotificationFeed } from "@/components/dashboard/NotificationFeed";
 import { getNewOpportunities } from "@/lib/notifications";
 import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
 import { useAppStore } from "@/lib/store/useAppStore";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { Avatar } from "./Avatar";
-import { AvatarUpload } from "./AvatarUpload";
+
 
 type Tab = "알림" | "저장" | "지원계획";
 
 const TABS: Tab[] = ["알림", "저장", "지원계획"];
 
 export function ProfileMenu() {
+  const { account, logout, loading, error, reload } = useAuth();
+  const router = useRouter();
   const profile = useAppStore((s) => s.profile);
   const savedIds = useAppStore((s) => s.savedIds);
   const applyPlanIds = useAppStore((s) => s.applyPlanIds);
-  const updateProfile = useAppStore((s) => s.updateProfile);
+
   const allOpportunities = useAllOpportunities();
   const isLoading = useIsLoadingOpportunities();
 
@@ -41,9 +46,9 @@ export function ProfileMenu() {
     };
   }, []);
 
-  if (!profile) return null;
 
-  const newEntries = getNewOpportunities(profile, savedIds, allOpportunities);
+
+  const newEntries = account && profile ? getNewOpportunities(profile, savedIds, allOpportunities) : [];
   const savedItems = allOpportunities.filter((o) => savedIds.includes(o.id));
   const applyPlanItems = allOpportunities.filter((o) => applyPlanIds.includes(o.id));
 
@@ -55,8 +60,8 @@ export function ProfileMenu() {
 
   return (
     <div className="relative shrink-0" ref={containerRef}>
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-label="프로필 메뉴 열기" className="relative block">
-        <Avatar src={profile.avatarUrl} size="sm" />
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-label="프로필 메뉴 열기" aria-expanded={open} className="relative block">
+        <Avatar src={account ? profile?.avatarUrl : undefined} size="sm" />
         {newEntries.length > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">
             {newEntries.length}
@@ -64,15 +69,23 @@ export function ProfileMenu() {
         )}
       </button>
 
-      {open && (
+      {open && (!account || error) && (
+        <div className="absolute top-full right-0 z-50 mt-2 grid w-max max-w-[90vw] gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          {loading ? <p role="status">로그인 확인 중…</p> : error ? <>
+            <p role="alert" className="text-sm">{error}</p>
+            <button onClick={() => void reload()} className="text-sm underline">다시 연결</button>
+          </> : <GoogleSignInButton>Google 계정으로 시작하기</GoogleSignInButton>}
+        </div>
+      )}
+      {open && account && !error && (
         <div className="absolute top-full right-0 z-50 mt-2 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
-            <AvatarUpload value={profile.avatarUrl} onChange={(avatarUrl) => updateProfile({ avatarUrl })} size="md" />
+            <Avatar src={profile?.avatarUrl} size="md" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-50">
-                {profile.region} · {profile.age}세
+                {account.nickname ?? "회원"}
               </p>
-              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{profile.employmentStatus}</p>
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">{account.email ?? "이메일 미제공"}</p>
               <Link
                 href="/profile/edit"
                 onClick={() => setOpen(false)}
@@ -84,6 +97,7 @@ export function ProfileMenu() {
             </div>
           </div>
 
+          <div className="border-b border-slate-100 px-4 py-2 dark:border-slate-800"><button type="button" className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={async () => { await logout(); setOpen(false); router.replace("/"); }}><LogOut className="h-4 w-4" />로그아웃</button></div>
           <div className="flex border-b border-slate-100 dark:border-slate-800">
             {TABS.map((t) => (
               <button

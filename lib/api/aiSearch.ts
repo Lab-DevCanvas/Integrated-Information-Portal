@@ -1,3 +1,4 @@
+import { accountSearchProfile, accountSearchPreferences } from "@/lib/account/search-profile";
 import type { ChatMessage, UserProfile } from "../types";
 
 export interface AISearchResult {
@@ -35,11 +36,14 @@ export async function searchAI(message: string, messages: ChatMessage[], profile
   const regions: Record<string, string> = { 서울: "SEOUL", 부산: "BUSAN", 대구: "DAEGU", 인천: "INCHEON",
     광주: "GWANGJU", 대전: "DAEJEON", 울산: "ULSAN", 세종: "SEJONG", 경기: "GYEONGGI", 강원: "GANGWON",
     충북: "CHUNGBUK", 충남: "CHUNGNAM", 전북: "JEONBUK", 전남: "JEONNAM", 경북: "GYEONGBUK", 경남: "GYEONGNAM", 제주: "JEJU", 전국: "NATIONWIDE" };
+  const preferences = accountSearchPreferences(profile);
+  const history = messages.filter((m) => !m.error).slice(preferences ? -5 : -6).map((m) => ({ role: m.role, text: m.text.slice(0, 2000) }));
+  if (preferences) history.unshift({ role: "user", text: preferences });
   const response = await fetch("/api/ai/search", {
     method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream" }, signal,
-    body: JSON.stringify({ message, history: messages.filter((m) => !m.error).slice(-6).map((m) => ({ role: m.role, text: m.text.slice(0, 2000) })),
+    body: JSON.stringify({ message, history,
       previous_result_ids: targetIds ?? previous?.results.map((r) => r.detail_id) ?? [],
-      profile: profile ? { age: profile.age, region: regions[profile.region],
+      profile: profile?.accountProfile ? accountSearchProfile(profile) : profile ? { age: profile.age, region: regions[profile.region],
         education: profile.educationStatus, employment: profile.employmentStatus, income: profile.incomePercentile } : null }),
   });
   if (!response.ok) {

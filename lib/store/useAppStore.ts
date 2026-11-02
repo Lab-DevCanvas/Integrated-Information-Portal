@@ -13,6 +13,9 @@ type Theme = "light" | "dark";
 const MAX_CONVERSATIONS = 20;
 
 interface AppState {
+  accountId: string | null;
+  workspaceStatus: "idle" | "loading" | "ready" | "saving" | "error";
+  workspaceError: string | null;
   profile: UserProfile | null;
   setProfile: (p: UserProfile) => void;
   updateProfile: (p: Partial<UserProfile>) => void;
@@ -60,6 +63,7 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      accountId: null, workspaceStatus: "idle", workspaceError: null,
       profile: null,
       setProfile: (p) => set({ profile: p }),
       updateProfile: (p) =>
@@ -69,18 +73,24 @@ export const useAppStore = create<AppState>()(
       clearProfile: () => set({ profile: null }),
 
       savedIds: [],
-      toggleSaved: (id) =>
+      toggleSaved: (id) => {
+        if (typeof window !== "undefined" && !get().accountId) { window.dispatchEvent(new Event("opfinde-login-required")); return; }
+        if (typeof window !== "undefined" && !["ready", "saving"].includes(get().workspaceStatus)) return;
         set((s) => ({
           savedIds: s.savedIds.includes(id) ? s.savedIds.filter((x) => x !== id) : [...s.savedIds, id],
-        })),
+        }));
+      },
 
       applyPlanIds: [],
-      toggleApplyPlan: (id) =>
+      toggleApplyPlan: (id) => {
+        if (typeof window !== "undefined" && !get().accountId) { window.dispatchEvent(new Event("opfinde-login-required")); return; }
+        if (typeof window !== "undefined" && !["ready", "saving"].includes(get().workspaceStatus)) return;
         set((s) => ({
           applyPlanIds: s.applyPlanIds.includes(id)
             ? s.applyPlanIds.filter((x) => x !== id)
             : [...s.applyPlanIds, id],
-        })),
+        }));
+      },
 
       compareIds: [],
       toggleCompare: (id) =>
@@ -189,16 +199,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "aiop-storage",
-      partialize: (s) => ({
-        profile: s.profile,
-        savedIds: s.savedIds,
-        applyPlanIds: s.applyPlanIds,
-        compareIds: s.compareIds,
-        conversations: s.conversations,
-        activeConversationId: s.activeConversationId,
-        theme: s.theme,
-        themeManuallySet: s.themeManuallySet,
-      }),
+      partialize: (s) => ({ theme: s.theme, themeManuallySet: s.themeManuallySet }),
+      merge: (persisted, current) => {
+        const preferences = persisted as { theme?: Theme; themeManuallySet?: boolean } | undefined;
+        return { ...current, theme: preferences?.theme ?? current.theme, themeManuallySet: preferences?.themeManuallySet ?? false };
+      },
       onRehydrateStorage: () => (state) => state?.setHasHydrated(true),
     },
   ),

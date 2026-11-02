@@ -9,7 +9,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import type { Opportunity, ScoreResult } from "@/lib/types";
 
 interface Props {
-  items: { opportunity: Opportunity; score: ScoreResult }[];
+  items: { opportunity: Opportunity; score?: ScoreResult }[];
   pageSize?: number;
   isLoading?: boolean;
 }
@@ -22,8 +22,8 @@ export function RecommendationList({ items, pageSize = 8, isLoading = false }: P
     return (
       <EmptyState
         icon={SearchX}
-        title="아직 추천할 기회가 없어요"
-        description="프로필 정보를 조금 더 채워주시면 더 정확하게 찾아드릴게요."
+        title="표시할 공고가 없어요"
+        description="새 공고가 등록되면 이곳에서 확인할 수 있어요."
       />
     );
   }
@@ -37,7 +37,7 @@ export function RecommendationList({ items, pageSize = 8, isLoading = false }: P
           key={opportunity.id}
           opportunity={opportunity}
           score={score}
-          matchReason={score.explanation}
+          matchReason={score?.explanation}
         />
       ))}
       {visible < items.length && (

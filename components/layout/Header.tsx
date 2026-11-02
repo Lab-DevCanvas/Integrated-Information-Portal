@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ProfileMenu } from "@/components/profile/ProfileMenu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { WorkspaceStatus } from "@/components/auth/WorkspaceStatus";
 import { Wordmark } from "@/components/layout/Wordmark";
 
 const NAV_ITEMS = [
@@ -55,6 +56,7 @@ export function Header() {
           <ProfileMenu />
         </div>
       </div>
+      <WorkspaceStatus />
     </header>
   );
 }

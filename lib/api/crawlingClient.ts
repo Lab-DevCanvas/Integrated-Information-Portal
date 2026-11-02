@@ -6,7 +6,7 @@
  * hand-written client talks to the REST API directly. See docs/crawling-integration.md.
  */
 
-const DEFAULT_BASE_URL = "http://34.59.75.165:8000";
+const DEFAULT_BASE_URL = "https://integrated-info.kro.kr";
 
 /** The VM's external IP is ephemeral (docs/deployment-gcp.md) — override via env if it changes. */
 export function getCrawlingApiBaseUrl(): string {

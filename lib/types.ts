@@ -94,6 +94,7 @@ export type ExperienceLevel = "무관" | "대학생" | "취준생" | "초급(1~3
 
 // --- User profile (persisted to localStorage) ---
 export interface UserProfile {
+  accountProfile?: import("./auth/client").Profile;
   /** display name entered during onboarding; undefined = fall back to a generic greeting */
   name?: string;
   /** data URL of an uploaded/cropped image; undefined = show the default avatar */
