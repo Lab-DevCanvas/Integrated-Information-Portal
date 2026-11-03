@@ -58,7 +58,7 @@ it("ranks contests by evidence for the current profile and leaves unsupported sc
 it("does not mistake an organizer name for a development theme and recognizes an explicit design call", () => {
   const organizer = opportunity("한국해외인프라도시개발지원공사 뉴 슬로건 공모전");
   const design = { ...opportunity("The 2nd doodll Makeathon"), description: "근무화 디자인 공모" };
-  const run = (interest: string) => selectCategoryOpportunities({ ...defaults, allOpportunities: [organizer, design], profile: makeProfile({ interests: [interest], jobInterests: [] }), sortMode: "score" });
+  const run = (interest: string) => selectCategoryOpportunities({ ...defaults, allOpportunities: [organizer, opportunity("상설공연 창작 콘텐츠 개발을 위한 아이디어 발굴대회"), design], profile: makeProfile({ interests: [interest], jobInterests: [] }), sortMode: "score" });
   expect(run("개발").every(x => !x.matchReason)).toBe(true);
   expect(run("디자인")[0].matchReason).toContain("근무화 디자인 공모");
 });
