@@ -66,7 +66,7 @@ export function handleSessionStorage(event: StorageEvent) {
 export async function accountRequest(path: string, init: RequestInit = {}): Promise<Response> {
   const settings = await getAuthConfig();
   await initialize();
-  const send = () => fetch(new URL(path, settings.apiBaseUrl), { ...init, credentials: "include", cache: "no-store", headers: { "Content-Type": "application/json", ...init.headers }, signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000) });
+  const send = () => fetch(new URL(path.replace(/^\//, ""), settings.apiBaseUrl.replace(/\/$/, "") + "/"), { ...init, credentials: "include", cache: "no-store", headers: { "Content-Type": "application/json", ...init.headers }, signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000) });
   let response = await send();
   if (response.status === 401 && await restoreSession()) response = await send();
   if (!response.ok) throw new ApiError(response.status, path, await response.json().catch(() => ({})));

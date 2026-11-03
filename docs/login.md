@@ -16,7 +16,7 @@ SDK로 쿠키 세션을 복원하며 브라우저 저장소에 토큰을 보관�
 
 프로필 편집은 서버가 지원하는 연령대·지역·학력·고용 상태·소득 구간·선호만 받는다. 정확한 나이나 소득을 구간에서 추정하지 않는다.
 
-검증: npm test, npx tsc --noEmit, npm run lint, npm run build. 교차 사이트 쿠키를 차단하는 브라우저에서는 배포 로그인 유지가 제한될 수 있다.
+검증: npm test, npx tsc --noEmit, npm run lint, npm run build. 배포 프론트가 API와 다른 사이트인 경우 Google 승인 URI에 https://integrated-information-portal.vercel.app/api/session/auth/google/callback 을 추가한다. 해당 프론트에 세션 프록시를 먼저 배포하고 백엔드 GOOGLE_OAUTH_REDIRECT_URI를 같은 주소로 설정한 뒤 프론트 AUTH_SESSION_PROXY=true를 적용한다. 시작·콜백·세션 갱신·계정 요청 모두 프론트 도메인의 HttpOnly 쿠키를 사용한다. 로컬에서 localhost:8000 콜백을 쓰는 경우 프록시를 끈다.
 
 ## AI 입력
 

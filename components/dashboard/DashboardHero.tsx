@@ -51,7 +51,7 @@ export function DashboardHero({ profile, scored, newTodayCount, total, signedIn 
           </p>
 
           <h1 className="mt-3 text-3xl leading-tight font-extrabold text-slate-900 sm:text-4xl dark:text-slate-50">
-            {profile ? <>{profile.name ? `${profile.name}님, 안녕하세요.` : "안녕하세요."}
+            {signedIn ? <>{profile?.name ? `${profile.name}님, 안녕하세요.` : "안녕하세요."}
             <br />
             오늘 <span className="text-indigo-600 dark:text-indigo-400">당신에게 맞는 기회</span>를 정리했어요.</> : <>로그인하고 {total !== null ? `${total.toLocaleString("ko-KR")}건의 ` : ""}공고 중<br /><span className="text-indigo-600 dark:text-indigo-400">오늘 나에게 맞는 기회</span>를 찾아보세요.</>}
           </h1>
