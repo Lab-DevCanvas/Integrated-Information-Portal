@@ -37,3 +37,28 @@ describe("category selection", () => {
     expect(result).toHaveLength(1);
   });
 });
+
+import { makeProfile } from "./testFixtures";
+
+it("ranks contests by evidence for the current profile and leaves unsupported scores absent", () => {
+  const video = { ...opportunity("창작 공모전"), description: "● 공모 분야\n - 에세이, 숏폼 영상\n● 유의 사항\nAI 사용 금지" };
+  const dev = opportunity("청년 해커톤");
+  const unrelated = { ...opportunity("창작 대회"), description: "● 제출 형식\n영상 파일로 제출" };
+  const allOpportunities = [unrelated, dev, video];
+  const run = (interests: string[]) => selectCategoryOpportunities({ ...defaults, allOpportunities, sortMode: "score", profile: makeProfile({ interests, jobInterests: [] }) });
+  expect(run(["영상 제작"])[0]).toMatchObject({ opportunity: video, score: undefined, matchCount: 1 });
+  expect(run(["영상 제작"])[0].matchReason).toContain("숏폼 영상");
+  expect(run(["개발"])[0].opportunity).toBe(dev);
+  for (const interests of [[], ["AI"]]) {
+    expect(run(interests).map(x => x.opportunity)).toEqual(allOpportunities);
+    expect(run(interests).every(x => !x.matchReason && x.score === undefined)).toBe(true);
+  }
+});
+
+it("does not mistake an organizer name for a development theme and recognizes an explicit design call", () => {
+  const organizer = opportunity("한국해외인프라도시개발지원공사 뉴 슬로건 공모전");
+  const design = { ...opportunity("The 2nd doodll Makeathon"), description: "근무화 디자인 공모" };
+  const run = (interest: string) => selectCategoryOpportunities({ ...defaults, allOpportunities: [organizer, design], profile: makeProfile({ interests: [interest], jobInterests: [] }), sortMode: "score" });
+  expect(run("개발").every(x => !x.matchReason)).toBe(true);
+  expect(run("디자인")[0].matchReason).toContain("근무화 디자인 공모");
+});

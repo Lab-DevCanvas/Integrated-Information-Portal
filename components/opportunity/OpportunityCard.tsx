@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSubCategoryLabel } from "@/lib/categories";
-import type { Opportunity, ScoreResult } from "@/lib/types";
+import type { JudgeStatus, Opportunity, ScoreResult } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { ScoreBadge } from "./ScoreBadge";
 import { DdayBadge } from "./DdayBadge";
@@ -11,10 +11,12 @@ import { CompareButton } from "./CompareButton";
 interface OpportunityCardProps {
   opportunity: Opportunity;
   score?: ScoreResult;
+  eligibilityStatus?: JudgeStatus;
   matchReason?: string;
 }
 
-export function OpportunityCard({ opportunity, score, matchReason }: OpportunityCardProps) {
+export function OpportunityCard({ opportunity, score, matchReason, eligibilityStatus }: OpportunityCardProps) {
+  const status = eligibilityStatus ?? score?.eligibilityJudgement.overall;
   return (
     <Card className="group p-4 transition-shadow hover:shadow-md sm:p-5">
       <div className="flex items-start gap-3 sm:gap-4">
@@ -42,7 +44,7 @@ export function OpportunityCard({ opportunity, score, matchReason }: Opportunity
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <DdayBadge applyEndDate={opportunity.applyEndDate} isAlwaysOpen={opportunity.isAlwaysOpen} />
-        {score && <EligibilityBadgeRow status={score.eligibilityJudgement.overall} />}
+        {status && <EligibilityBadgeRow status={status} />}
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
           {opportunity.benefitDescription}
         </span>
