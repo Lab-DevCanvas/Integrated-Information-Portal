@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
+import type { ContestFit } from "@/lib/scoring/contestFit";
 import type { Opportunity, ScoreResult } from "@/lib/types";
 
 interface Props {
-  items: { opportunity: Opportunity; score?: ScoreResult; matchReason?: string; contest: boolean }[];
+  items: { opportunity: Opportunity; score?: ScoreResult; matchReason?: string; contest: boolean; fit?: ContestFit }[];
   loadingMore: boolean;
   backgroundError: string;
 }
@@ -38,8 +39,8 @@ export function CategoryResultList({ items, loadingMore, backgroundError }: Prop
 
   return (
     <div className="space-y-3">
-      {items.slice(0, visibleCount).map(({ opportunity, score, matchReason, contest }) => (
-        <OpportunityCard key={opportunity.id} opportunity={opportunity} score={score} matchReason={matchReason} eligibilityStatus={contest ? "unknown" : undefined} />
+      {items.slice(0, visibleCount).map(({ opportunity, score, matchReason, contest, fit }) => (
+        <OpportunityCard key={opportunity.id} opportunity={opportunity} score={score} fit={fit} matchReason={matchReason} eligibilityStatus={contest ? "unknown" : undefined} />
       ))}
       <div ref={sentinel} role="status" className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
         {hasMore ? "아래로 스크롤하면 더 볼 수 있어요."

@@ -1,3 +1,4 @@
+import { contestFit, selectedInterests } from "./contestFit";
 import type { Opportunity, UserProfile } from "../types";
 
 // Only positive subject sections supply body evidence. Other headings terminate a section.
@@ -9,7 +10,7 @@ const groups = [
 ];
 
 export function contestMatches(opp: Opportunity, profile: UserProfile | null) {
-  const interests = [...new Set([...(profile?.interests ?? []), ...(profile?.jobInterests ?? [])].map(s => s.trim()).filter(Boolean))];
+  const interests = selectedInterests(profile);
   if (!interests.length) return [];
   const evidence = [opp.title];
   let inSubject = false;
@@ -43,5 +44,5 @@ export function contestPresentation(opportunity: Opportunity, profile: UserProfi
     const contest = opportunity.dataOrigin === "crawling" && opportunity.categoryId === "contest";
     const matches = contest ? contestMatches(opportunity, profile) : [];
     const matchReason = matches.length ? "내 관심사와 일치 · " + matches.map(m => m.interest + " (“" + m.evidence + "”)").join(" · ") : undefined;
-    return { contest, matchCount: matches.length, matchReason };
+    return { contest, matchCount: matches.length, matchReason, fit: contest ? contestFit(profile, opportunity, matches.length) : undefined };
 }

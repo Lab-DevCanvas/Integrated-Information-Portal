@@ -44,9 +44,9 @@ export function selectCategoryOpportunities({ allOpportunities, categoryIds, typ
   });
 
   let scored = base.map((opportunity) => {
-    const { contest, matchCount, matchReason } = contestPresentation(opportunity, profile);
+    const { contest, matchCount, matchReason, fit } = contestPresentation(opportunity, profile);
     const score = profile && !contest ? computeScore(profile, opportunity, savedIds) : undefined;
-    return { opportunity, score, matchReason, matchCount, contest };
+    return { opportunity, score, matchReason, matchCount, contest, fit };
   });
 
   if (eligibleOnly) {
@@ -79,7 +79,7 @@ export function selectCategoryOpportunities({ allOpportunities, categoryIds, typ
       scored.sort((a, b) => b.opportunity.portfolioValue - a.opportunity.portfolioValue);
       break;
     default:
-      scored.sort((a, b) => b.matchCount - a.matchCount || (b.score?.totalScore ?? 0) - (a.score?.totalScore ?? 0));
+      scored.sort((a, b) => (b.fit?.percent ?? -1) - (a.fit?.percent ?? -1) || b.matchCount - a.matchCount || (b.score?.totalScore ?? 0) - (a.score?.totalScore ?? 0));
   }
 
   return scored;

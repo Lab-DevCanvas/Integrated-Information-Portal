@@ -1,3 +1,5 @@
+import type { ContestFit } from "@/lib/scoring/contestFit";
+import { ContestFitBadge } from "./ContestFitBadge";
 import Link from "next/link";
 import { getSubCategoryLabel } from "@/lib/categories";
 import type { JudgeStatus, Opportunity, ScoreResult } from "@/lib/types";
@@ -12,10 +14,11 @@ interface OpportunityCardProps {
   opportunity: Opportunity;
   score?: ScoreResult;
   eligibilityStatus?: JudgeStatus;
+  fit?: ContestFit;
   matchReason?: string;
 }
 
-export function OpportunityCard({ opportunity, score, matchReason, eligibilityStatus }: OpportunityCardProps) {
+export function OpportunityCard({ opportunity, score, matchReason, eligibilityStatus, fit }: OpportunityCardProps) {
   const status = eligibilityStatus ?? score?.eligibilityJudgement.overall;
   return (
     <Card className="group p-4 transition-shadow hover:shadow-md sm:p-5">
@@ -50,6 +53,7 @@ export function OpportunityCard({ opportunity, score, matchReason, eligibilitySt
         </span>
       </div>
 
+      {fit && <ContestFitBadge fit={fit} />}
       {matchReason && (
         <p className="mt-3 rounded-xl bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">
           {matchReason}

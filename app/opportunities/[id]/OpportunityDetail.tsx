@@ -37,6 +37,7 @@ import {
 } from "@/lib/format";
 import { daysSince, daysUntil, formatDday } from "@/lib/mock/dateHelpers";
 import { buildRecommendationReasons } from "@/lib/scoring/reasons";
+import { ContestFitBadge } from "@/components/opportunity/ContestFitBadge";
 import { contestPresentation } from "@/lib/scoring/contestInterests";
 import { computeScore } from "@/lib/scoring/score";
 import { useAppStore } from "@/lib/store/useAppStore";
@@ -74,7 +75,7 @@ export function OpportunityDetail({
   const toggleCompare = useAppStore((s) => s.toggleCompare);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
 
-  const { contest, matchReason } = contestPresentation(opportunity, hasHydrated ? profile : null);
+  const { contest, matchReason, fit } = contestPresentation(opportunity, hasHydrated ? profile : null);
   const score =
     hasHydrated && profile && !contest
       ? computeScore(profile, opportunity, savedIds)
@@ -234,7 +235,7 @@ export function OpportunityDetail({
           {contest && (
             <>
               <section id="section-key-info" className="scroll-mt-20">
-                <Card className="p-5"><h2>내 관심사와 공모 분야</h2><p>{matchReason ?? "표시할 관심사 일치 근거가 없어요."}</p></Card>
+                <Card className="p-5"><h2>내 관심사와 공모 분야</h2>{fit && <ContestFitBadge fit={fit} />}<p>{matchReason ?? "표시할 관심사 일치 근거가 없어요."}</p></Card>
               </section>
               <section id="section-eligibility" className="scroll-mt-20">
                 <Card className="p-5"><h2>지원 자격</h2><EligibilityBadgeRow status="unknown" /><p>참가 조건은 원문에서 확인해 주세요.</p></Card>
