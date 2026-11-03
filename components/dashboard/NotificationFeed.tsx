@@ -14,7 +14,7 @@ interface Props {
 
 export function NotificationFeed({ entries, mode = "teaser", teaserCount = 4, isLoading = false }: Props) {
   if (entries.length === 0) {
-    if (isLoading) return <LoadingState title="새로운 기회를 불러오는 중이에요" />;
+    if (isLoading) return <LoadingState layout="rows" title="새로운 기회를 불러오는 중이에요" />;
     return (
       <EmptyState
         icon={Bell}

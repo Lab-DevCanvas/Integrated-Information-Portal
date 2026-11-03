@@ -39,7 +39,7 @@ export default function ApplyPlanPage() {
 
       {items.length === 0 ? (
         isLoading && applyPlanIds.length > 0 ? (
-          <LoadingState title="지원 계획을 불러오는 중이에요" />
+          <LoadingState count={Math.min(applyPlanIds.length, 3)} title="지원 계획을 불러오는 중이에요" />
         ) : (
           <EmptyState
             icon={ClipboardCheck}

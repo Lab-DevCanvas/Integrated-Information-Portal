@@ -32,7 +32,7 @@ export default function SavedPage() {
 
       {items.length === 0 ? (
         isLoading && savedIds.length > 0 ? (
-          <LoadingState title="저장한 기회를 불러오는 중이에요" />
+          <LoadingState count={Math.min(savedIds.length, 3)} title="저장한 기회를 불러오는 중이에요" />
         ) : (
           <EmptyState
             icon={Bookmark}

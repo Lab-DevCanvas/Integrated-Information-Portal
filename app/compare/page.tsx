@@ -42,7 +42,7 @@ export default function ComparePage() {
 
       {entries.length < 2 ? (
         isLoading && compareIds.length >= 2 ? (
-          <LoadingState title="비교할 기회를 불러오는 중이에요" />
+          <LoadingState layout="table" count={compareIds.length} title="비교할 기회를 불러오는 중이에요" />
         ) : (
           <EmptyState
             icon={Scale}

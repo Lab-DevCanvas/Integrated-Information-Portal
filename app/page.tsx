@@ -1,5 +1,6 @@
 "use client";
 
+import { LoadingState } from "@/components/ui/LoadingState";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
@@ -57,7 +58,7 @@ export default function DashboardPage() {
     return () => controller.abort();
   }, [attempt]);
 
-  if (loading) return <p role="status" className="py-16 text-center">불러오는 중…</p>;
+  if (loading) return <LoadingState layout="panel" title="홈 화면을 불러오는 중이에요" />;
   const recommended = profile ? scored.filter(({ score }) => score.totalScore >= 70) : [];
   const visibleToday = today?.filter((item) => category === "all" || item.categoryId === category) ?? [];
   return (
@@ -75,7 +76,7 @@ export default function DashboardPage() {
           ))}
         </div>
         {error ? <p role="alert">공고를 불러오지 못했어요. <button className="underline" onClick={() => { setError(false); retry(attempt + 1); }}>다시 시도</button></p>
-          : today === null ? <p role="status">오늘 공고를 확인하고 있어요…</p>
+          : today === null ? <LoadingState title="오늘 공고를 확인하고 있어요" />
           : visibleToday.length ? <RecommendationList key={category} pageSize={3} items={visibleToday.map(opportunity => ({ opportunity }))} />
           : <p className="py-5 text-sm text-slate-500">오늘 이 분야에 새로 등록된 공고가 없어요.</p>}
       </Card>
