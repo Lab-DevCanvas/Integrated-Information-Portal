@@ -5,7 +5,7 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
-import { computeScore } from "@/lib/scoring/score";
+import { presentOpportunity } from "@/lib/scoring/presentation";
 import { useAppStore } from "@/lib/store/useAppStore";
 
 export default function SavedPage() {
@@ -16,10 +16,7 @@ export default function SavedPage() {
 
   if (!profile) return null;
 
-  const items = allOpportunities.filter((o) => savedIds.includes(o.id)).map((opportunity) => ({
-    opportunity,
-    score: computeScore(profile, opportunity, savedIds),
-  }));
+  const items = allOpportunities.filter((o) => savedIds.includes(o.id)).map((opportunity) => presentOpportunity(opportunity, profile, savedIds));
 
   return (
     <div className="space-y-6">
@@ -42,8 +39,8 @@ export default function SavedPage() {
         )
       ) : (
         <div className="space-y-3">
-          {items.map(({ opportunity, score }) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} score={score} />
+          {items.map((item) => (
+            <OpportunityCard key={item.opportunity.id} {...item} />
           ))}
         </div>
       )}

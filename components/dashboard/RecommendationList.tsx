@@ -6,10 +6,10 @@ import { OpportunityCard } from "@/components/opportunity/OpportunityCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
-import type { Opportunity, ScoreResult } from "@/lib/types";
+import type { PresentedOpportunity } from "@/lib/scoring/presentation";
 
 interface Props {
-  items: { opportunity: Opportunity; score?: ScoreResult }[];
+  items: PresentedOpportunity[];
   pageSize?: number;
   isLoading?: boolean;
 }
@@ -32,12 +32,9 @@ export function RecommendationList({ items, pageSize = 8, isLoading = false }: P
 
   return (
     <div className="space-y-3">
-      {shown.map(({ opportunity, score }) => (
+      {shown.map((item) => (
         <OpportunityCard
-          key={opportunity.id}
-          opportunity={opportunity}
-          score={score}
-          matchReason={score?.explanation}
+          key={item.opportunity.id} {...item}
         />
       ))}
       {visible < items.length && (

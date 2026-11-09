@@ -1,12 +1,14 @@
+import type { ContestFit } from "../scoring/contestFit";
 import type { Opportunity, ScoreResult } from "../types";
 
 export interface CompareEntry {
   opportunity: Opportunity;
-  score: ScoreResult;
+  score?: ScoreResult;
+  fit?: ContestFit;
 }
 
-function getSubRaw(score: ScoreResult, key: string): number {
-  return score.subscores.find((s) => s.key === key)?.rawScore ?? 0;
+function getSubRaw(score: ScoreResult | undefined, key: string): number {
+  return score?.subscores.find((s) => s.key === key)?.rawScore ?? 0;
 }
 
 function benefitTierScore(o: Opportunity): number {
@@ -38,17 +40,23 @@ function metricsFor(entry: CompareEntry) {
 export function buildComparisonSentence(entries: CompareEntry[]): string {
   if (entries.length < 2) return "";
 
-  const allFail = entries.every((e) => e.score.eligibilityJudgement.overall === "fail");
+  if (entries.some(e => e.opportunity.dataOrigin === "crawling")) {
+    const comparable = entries.every(e => e.fit && e.fit.label === entries[0].fit?.label);
+    if (!comparable) return "같은 기준으로 비교할 근거가 부족해요. 공고별 일치 항목을 확인해 주세요.";
+    const ranked = [...entries].sort((a,b) => b.fit!.percent - a.fit!.percent);
+    return ranked[0].fit!.percent === ranked[1].fit!.percent ? "가장 높은 일치 비율이 같은 공고가 있어요." : ranked[0].opportunity.title + "의 " + ranked[0].fit!.label + "이 가장 높아요.";
+  }
+  const allFail = entries.every((e) => e.score?.eligibilityJudgement.overall === "fail");
   if (allFail) {
-    const leastBad = [...entries].sort((a, b) => b.score.totalScore - a.score.totalScore)[0];
+    const leastBad = [...entries].sort((a, b) => b.score!.totalScore - a.score!.totalScore)[0];
     return `비교한 기회 모두 일부 자격 조건이 맞지 않아요. 그래도 굳이 고른다면 ${leastBad.opportunity.title}가 상대적으로 조건에 가장 가깝습니다.`;
   }
 
-  const eligible = entries.filter((e) => e.score.eligibilityJudgement.overall !== "fail");
+  const eligible = entries.filter((e) => e.score?.eligibilityJudgement.overall !== "fail");
   const pool = eligible.length > 0 ? eligible : entries;
 
   const winner = [...pool].sort((a, b) => {
-    if (b.score.totalScore !== a.score.totalScore) return b.score.totalScore - a.score.totalScore;
+    if (b.score!.totalScore !== a.score!.totalScore) return b.score!.totalScore - a.score!.totalScore;
     const eligDiff = getSubRaw(b.score, "eligibility") - getSubRaw(a.score, "eligibility");
     if (eligDiff !== 0) return eligDiff;
     return b.opportunity.portfolioValue - a.opportunity.portfolioValue;

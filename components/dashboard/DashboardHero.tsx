@@ -9,7 +9,7 @@ interface Props {
   profile: UserProfile | null;
   total: number | null;
   signedIn: boolean;
-  scored: { opportunity: Opportunity; score: ScoreResult }[];
+  scored: { opportunity: Opportunity; score?: ScoreResult }[];
   newTodayCount: number | null;
 }
 
@@ -22,7 +22,7 @@ export function DashboardHero({ profile, scored, newTodayCount, total, signedIn 
   const completion = profile ? getProfileCompletion(profile) : null;
   const completionPercent = Math.round((completion?.percent ?? 0) * 100);
 
-  const actionableCount = scored.filter((s) => s.score.eligibilityJudgement.overall !== "fail").length;
+  const actionableCount = scored.filter((s) => s.score?.eligibilityJudgement.overall !== "fail").length;
   const closingSoonCount = scored.filter(({ opportunity: o }) => {
     if (o.isAlwaysOpen) return false;
     const d = daysUntil(o.applyEndDate);

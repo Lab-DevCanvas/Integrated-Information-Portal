@@ -1,11 +1,8 @@
 import { daysSince } from "./mock/dateHelpers";
-import { computeScore } from "./scoring/score";
-import type { Opportunity, ScoreResult, UserProfile } from "./types";
+import { presentOpportunity, type PresentedOpportunity } from "./scoring/presentation";
+import type { Opportunity, UserProfile } from "./types";
 
-export interface NotificationEntry {
-  opportunity: Opportunity;
-  score: ScoreResult;
-}
+export type NotificationEntry = PresentedOpportunity;
 
 const NEW_WINDOW_DAYS = 14;
 const MIN_SCORE = 50;
@@ -18,8 +15,8 @@ function relevantEntriesWithin(
 ): NotificationEntry[] {
   return opportunities
     .filter((o) => daysSince(o.createdAt) <= windowDays)
-    .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }))
-    .filter((entry) => entry.score.totalScore >= MIN_SCORE)
+    .map((opportunity) => presentOpportunity(opportunity, profile, savedIds))
+    .filter((entry) => (entry.percent ?? 0) >= MIN_SCORE)
     .sort((a, b) => new Date(b.opportunity.createdAt).getTime() - new Date(a.opportunity.createdAt).getTime());
 }
 

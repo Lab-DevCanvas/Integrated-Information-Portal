@@ -1,5 +1,6 @@
 "use client";
 
+import { useInterestSimilarities } from "@/lib/hooks/useInterestSimilarities";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -75,9 +76,10 @@ export function OpportunityDetail({
   const toggleCompare = useAppStore((s) => s.toggleCompare);
   const hasHydrated = useAppStore((s) => s._hasHydrated);
 
-  const { contest, matchReason, fit } = contestPresentation(opportunity, hasHydrated ? profile : null);
+  const [enriched] = useInterestSimilarities([opportunity], hasHydrated ? profile : null);
+  const { crawled, age, matchReason, fit } = contestPresentation(enriched, hasHydrated ? profile : null);
   const score =
-    hasHydrated && profile && !contest
+    hasHydrated && profile && !crawled
       ? computeScore(profile, opportunity, savedIds)
       : null;
   const category = getCategory(opportunity.categoryId);
@@ -227,18 +229,18 @@ export function OpportunityDetail({
                     : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
               >
-                {contest && t.id === "section-ai-analysis" ? "기회 정보" : t.label}
+                {crawled && t.id === "section-ai-analysis" ? "기회 정보" : t.label}
               </button>
             ))}
           </div>
 
-          {contest && (
+          {crawled && (
             <>
               <section id="section-key-info" className="scroll-mt-20">
-                <Card className="p-5"><h2>내 관심사와 공모 분야</h2>{fit && <ContestFitBadge fit={fit} />}<p>{matchReason ?? "표시할 관심사 일치 근거가 없어요."}</p></Card>
+                <Card className="p-5"><h2>내 관심사와 공고 분야</h2>{fit && <ContestFitBadge fit={fit} />}<p>{matchReason ?? "표시할 관심사 일치 근거가 없어요."}</p></Card>
               </section>
               <section id="section-eligibility" className="scroll-mt-20">
-                <Card className="p-5"><h2>지원 자격</h2><EligibilityBadgeRow status="unknown" /><p>참가 조건은 원문에서 확인해 주세요.</p></Card>
+                <Card className="p-5"><h2>지원 자격</h2><EligibilityBadgeRow status={age?.failed ? "fail" : "unknown"} /><p>{age?.reason ?? "참가 조건은 원문에서 확인해 주세요."}</p></Card>
               </section>
             </>
           )}
@@ -339,7 +341,7 @@ export function OpportunityDetail({
                     참여방식
                   </dt>
                   <dd className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {contest ? "원문 확인 필요" : opportunity.teamRequired ? "팀" : "개인"}
+                    {crawled ? "원문 확인 필요" : opportunity.teamRequired ? "팀" : "개인"}
                   </dd>
                 </div>
                 <div>
@@ -348,7 +350,7 @@ export function OpportunityDetail({
                     경력 조건
                   </dt>
                   <dd className="mt-0.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {contest ? "원문 확인 필요" : opportunity.requiredExperienceLevel}
+                    {crawled ? "원문 확인 필요" : opportunity.requiredExperienceLevel}
                   </dd>
                 </div>
                 <div>
@@ -423,7 +425,7 @@ export function OpportunityDetail({
               </Card>
             )}
 
-            {score && <ScoreBreakdownPanel score={score} />}
+            {!age?.failed && (crawled || score) && <ScoreBreakdownPanel score={score ?? undefined} fit={fit} />}
           </section>
 
           {/* 04 · ORIGINAL INFORMATION */}

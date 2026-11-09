@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { scoreAll } from "../scoring/score";
+import { presentOpportunity } from "../scoring/presentation";
+import { daysUntil } from "../mock/dateHelpers";
 import { useAppStore } from "../store/useAppStore";
 import { useAllOpportunities } from "./useAllOpportunities";
 import type { Opportunity } from "../types";
@@ -14,6 +15,6 @@ export function useScoredOpportunities(source?: Opportunity[]) {
 
   return useMemo(() => {
     if (!hasHydrated || !profile) return [];
-    return scoreAll(profile, list, savedIds);
+    return list.filter(o => o.isAlwaysOpen || !o.applyEndDate || daysUntil(o.applyEndDate) >= 0).map(o => presentOpportunity(o, profile, savedIds)).sort((a,b) => (b.percent ?? -1) - (a.percent ?? -1));
   }, [hasHydrated, profile, savedIds, list]);
 }

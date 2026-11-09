@@ -3,6 +3,7 @@
 import { LoadingState } from "@/components/ui/LoadingState";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { presentOpportunity } from "@/lib/scoring/presentation";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { RecommendationList } from "@/components/dashboard/RecommendationList";
 import { Card } from "@/components/ui/Card";
@@ -59,7 +60,7 @@ export default function DashboardPage() {
   }, [attempt]);
 
   if (loading) return <LoadingState layout="panel" title="홈 화면을 불러오는 중이에요" />;
-  const recommended = profile ? scored.filter(({ score }) => score.totalScore >= 70) : [];
+  const recommended = profile ? scored.filter(row => row.crawled ? (row.fit?.percent ?? 0) > 0 : (row.percent ?? 0) >= 70) : [];
   const visibleToday = today?.filter((item) => category === "all" || item.categoryId === category) ?? [];
   return (
     <div className="space-y-8">
@@ -77,13 +78,13 @@ export default function DashboardPage() {
         </div>
         {error ? <p role="alert">공고를 불러오지 못했어요. <button className="underline" onClick={() => { setError(false); retry(attempt + 1); }}>다시 시도</button></p>
           : today === null ? <LoadingState title="오늘 공고를 확인하고 있어요" />
-          : visibleToday.length ? <RecommendationList key={category} pageSize={3} items={visibleToday.map(opportunity => ({ opportunity }))} />
+          : visibleToday.length ? <RecommendationList key={category} pageSize={3} items={visibleToday.map(opportunity => presentOpportunity(opportunity, profile))} />
           : <p className="py-5 text-sm text-slate-500">오늘 이 분야에 새로 등록된 공고가 없어요.</p>}
       </Card>
       <section id="recommendations" className="scroll-mt-20">
         <h2 className="mb-3 text-lg font-bold">{recommended.length ? `추천 기회 ${recommended.length}건` : "최근 공고"}</h2>
         <RecommendationList key={recommended.length ? "recommended" : "latest"}
-          items={recommended.length ? recommended : latest.map(opportunity => ({ opportunity }))}
+          items={recommended.length ? recommended : latest.map(opportunity => presentOpportunity(opportunity, profile))}
           isLoading={total === null && !error} />
       </section>
     </div>

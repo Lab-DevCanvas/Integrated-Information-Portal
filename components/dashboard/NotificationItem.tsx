@@ -4,7 +4,7 @@ import type { NotificationEntry } from "@/lib/notifications";
 import { daysSince } from "@/lib/mock/dateHelpers";
 
 export function NotificationItem({ entry }: { entry: NotificationEntry }) {
-  const { opportunity, score } = entry;
+  const { opportunity, percent, fit, matchReason } = entry;
   const since = daysSince(opportunity.createdAt);
   const whenLabel = since <= 0 ? "오늘" : since === 1 ? "어제" : `${since}일 전`;
 
@@ -21,9 +21,9 @@ export function NotificationItem({ entry }: { entry: NotificationEntry }) {
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{opportunity.title}</p>
           <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{whenLabel}</span>
         </div>
-        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{score.explanation}</p>
+        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{matchReason}</p>
       </div>
-      <span className="shrink-0 text-xs font-bold text-indigo-600 dark:text-indigo-400">{score.totalScore}%</span>
+      <span className="shrink-0 text-xs font-bold text-indigo-600 dark:text-indigo-400">{fit?.label ?? "적합도"} {percent}%</span>
     </Link>
   );
 }

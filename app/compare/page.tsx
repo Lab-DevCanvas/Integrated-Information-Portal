@@ -8,7 +8,7 @@ import { CompareRecommendationBox } from "@/components/compare/CompareRecommenda
 import { CompareTable } from "@/components/compare/CompareTable";
 import { buildComparisonSentence } from "@/lib/compare/recommend";
 import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
-import { computeScore } from "@/lib/scoring/score";
+import { presentOpportunity } from "@/lib/scoring/presentation";
 import { useAppStore } from "@/lib/store/useAppStore";
 
 export default function ComparePage() {
@@ -24,7 +24,7 @@ export default function ComparePage() {
   const entries = compareIds
     .map((id) => allOpportunities.find((o) => o.id === id))
     .filter((o): o is NonNullable<typeof o> => Boolean(o))
-    .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }));
+    .map((opportunity) => presentOpportunity(opportunity, profile, savedIds));
 
   return (
     <div className="space-y-6">

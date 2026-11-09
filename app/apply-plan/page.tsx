@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { daysUntil } from "@/lib/mock/dateHelpers";
 import { useAllOpportunities, useIsLoadingOpportunities } from "@/lib/hooks/useAllOpportunities";
-import { computeScore } from "@/lib/scoring/score";
+import { presentOpportunity } from "@/lib/scoring/presentation";
 import { useAppStore } from "@/lib/store/useAppStore";
 
 export default function ApplyPlanPage() {
@@ -20,7 +20,7 @@ export default function ApplyPlanPage() {
 
   const items = allOpportunities
     .filter((o) => applyPlanIds.includes(o.id))
-    .map((opportunity) => ({ opportunity, score: computeScore(profile, opportunity, savedIds) }))
+    .map((opportunity) => presentOpportunity(opportunity, profile, savedIds))
     .sort((a, b) => {
       const aAlways = a.opportunity.isAlwaysOpen ? 1 : 0;
       const bAlways = b.opportunity.isAlwaysOpen ? 1 : 0;
@@ -49,8 +49,8 @@ export default function ApplyPlanPage() {
         )
       ) : (
         <div className="space-y-3">
-          {items.map(({ opportunity, score }) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} score={score} />
+          {items.map((item) => (
+            <OpportunityCard key={item.opportunity.id} {...item} />
           ))}
         </div>
       )}

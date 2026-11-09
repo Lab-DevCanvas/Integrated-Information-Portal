@@ -62,3 +62,17 @@ it("does not mistake an organizer name for a development theme and recognizes an
   expect(run("개발").every(x => !x.matchReason)).toBe(true);
   expect(run("디자인")[0].matchReason).toContain("근무화 디자인 공모");
 });
+
+it("uses evidence across the mixed feed instead of scoring default metadata", () => {
+  const job = opportunity("프로그래밍 인턴 모집", "job");
+  const activity = opportunity("디자인 서포터즈", "activity");
+  const policy = opportunity("청년 대출 지원", "government-policy");
+  const run = (interests: string[]) => selectCategoryOpportunities({ ...defaults, allOpportunities: [policy, activity, job], sortMode: "score", profile: makeProfile({ interests, jobInterests: [] }) });
+  const dev = run(["개발", "영상"]);
+  expect(dev[0].opportunity.id).toBe(job.id);
+  expect(dev[0].fit?.percent).toBe(60);
+  expect(dev.every(row => row.score === undefined)).toBe(true);
+  expect(dev.find(row => row.opportunity.id === policy.id)?.fit?.percent).toBe(0);
+  expect(run(["디자인"])[0].opportunity.id).toBe(activity.id);
+  expect(run([]).every(row => row.fit === undefined)).toBe(true);
+});

@@ -1,3 +1,4 @@
+import { useInterestSimilarities } from "./useInterestSimilarities";
 import { useEffect } from "react";
 import { useAppStore } from "../store/useAppStore";
 import type { Opportunity } from "../types";
@@ -17,7 +18,8 @@ export function useAllOpportunities(): Opportunity[] {
     if (crawledStatus === "idle") void loadCrawledOpportunities();
   }, [crawledStatus, loadCrawledOpportunities]);
 
-  return crawledOpportunities;
+  const profile = useAppStore(s => s.profile);
+  return useInterestSimilarities(crawledOpportunities, profile);
 }
 
 /** True while the crawling-backend fetch hasn't resolved yet (not yet started, or in flight). */

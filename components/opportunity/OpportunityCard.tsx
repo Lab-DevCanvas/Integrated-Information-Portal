@@ -1,5 +1,4 @@
 import type { ContestFit } from "@/lib/scoring/contestFit";
-import { ContestFitBadge } from "./ContestFitBadge";
 import Link from "next/link";
 import { getSubCategoryLabel } from "@/lib/categories";
 import type { JudgeStatus, Opportunity, ScoreResult } from "@/lib/types";
@@ -23,7 +22,7 @@ export function OpportunityCard({ opportunity, score, matchReason, eligibilitySt
   return (
     <Card className="group p-4 transition-shadow hover:shadow-md sm:p-5">
       <div className="flex items-start gap-3 sm:gap-4">
-        {score && <ScoreBadge score={score.totalScore} />}
+        {status === "fail" && opportunity.dataOrigin === "crawling" ? <span className="shrink-0 rounded-xl bg-rose-50 p-2 text-xs font-semibold text-rose-700">지원 대상 아님</span> : <ScoreBadge score={fit?.percent ?? score?.totalScore} />}
 
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
@@ -53,7 +52,7 @@ export function OpportunityCard({ opportunity, score, matchReason, eligibilitySt
         </span>
       </div>
 
-      {fit && <ContestFitBadge fit={fit} />}
+      {fit && <p className="mt-3 text-xs text-slate-500">{fit.label} · {fit.explanation}</p>}
       {matchReason && (
         <p className="mt-3 rounded-xl bg-indigo-50 px-3 py-2 text-xs leading-relaxed text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">
           {matchReason}

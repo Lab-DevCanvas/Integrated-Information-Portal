@@ -45,8 +45,9 @@ function LevelDots({ value, max = 5 }: { value: number; max?: number }) {
 }
 
 export function CompareTable({ entries }: { entries: CompareEntry[] }) {
-  const bestScoreIdx = bestIndex(
-    entries.map((e) => e.score.totalScore),
+  const comparable = entries.every(e => e.fit ? e.fit.label === entries[0]?.fit?.label : !!e.score && !entries[0]?.fit);
+  const bestScoreIdx = !comparable ? -1 : bestIndex(
+    entries.map((e) => e.fit?.percent ?? e.score?.totalScore ?? -1),
     "max",
   );
   const bestBenefitIdx = bestIndex(
@@ -67,7 +68,7 @@ export function CompareTable({ entries }: { entries: CompareEntry[] }) {
   );
 
   const rows: { label: string; render: (e: CompareEntry) => ReactNode; bestIdx: number }[] = [
-    { label: "적합도", render: (e) => `${e.score.totalScore}%`, bestIdx: bestScoreIdx },
+    { label: "적합도", render: (e) => e.fit ? `${e.fit.label} ${e.fit.percent}% · ${e.fit.explanation}` : e.score ? `${e.score.totalScore}%` : "근거 부족", bestIdx: bestScoreIdx },
     {
       label: "혜택",
       render: (e) => (e.opportunity.benefitAmount ? formatKRW(e.opportunity.benefitAmount) : e.opportunity.benefitDescription),

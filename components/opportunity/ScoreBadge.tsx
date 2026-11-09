@@ -6,13 +6,14 @@ const SIZE_CLASSES: Record<"sm" | "md" | "lg", string> = {
   lg: "h-20 w-20 text-lg",
 };
 
-export function ScoreBadge({ score, size = "md" }: { score: number; size?: "sm" | "md" | "lg" }) {
-  const tier = scoreTier(score);
+export function ScoreBadge({ score, size = "md" }: { score?: number; size?: "sm" | "md" | "lg" }) {
+  const color = score === undefined ? "text-slate-400 ring-slate-200 dark:ring-slate-700" : scoreTier(score).className;
   return (
     <div
-      className={`flex shrink-0 flex-col items-center justify-center rounded-full bg-white ring-2 dark:bg-slate-900 ${tier.className} ${SIZE_CLASSES[size]}`}
+      title={score === undefined ? "적합도 산정 전" : undefined}
+      className={`flex shrink-0 flex-col items-center justify-center rounded-full bg-white ring-2 dark:bg-slate-900 ${color} ${SIZE_CLASSES[size]}`}
     >
-      <span className="font-bold leading-none">{score}%</span>
+      <span className="font-bold leading-none">{score === undefined ? "—" : `${score}%`}</span>
     </div>
   );
 }

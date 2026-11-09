@@ -1,6 +1,5 @@
 import { daysUntil } from "./mock/dateHelpers";
-import { contestPresentation } from "./scoring/contestInterests";
-import { computeScore } from "./scoring/score";
+import { presentOpportunity } from "./scoring/presentation";
 import type { CategoryId, ExperienceLevel, Opportunity, OpportunityType, RegionCode, UserProfile } from "./types";
 
 interface CategorySelection {
@@ -43,14 +42,10 @@ export function selectCategoryOpportunities({ allOpportunities, categoryIds, typ
     return true;
   });
 
-  let scored = base.map((opportunity) => {
-    const { contest, matchCount, matchReason, fit } = contestPresentation(opportunity, profile);
-    const score = profile && !contest ? computeScore(profile, opportunity, savedIds) : undefined;
-    return { opportunity, score, matchReason, matchCount, contest, fit };
-  });
+  let scored = base.map(o => presentOpportunity(o, profile, savedIds));
 
   if (eligibleOnly) {
-    scored = scored.filter((x) => x.score?.eligibilityJudgement.overall !== "fail");
+    scored = scored.filter((x) => (x.eligibilityStatus ?? x.score?.eligibilityJudgement.overall) !== "fail");
   }
 
   switch (sortMode) {
@@ -79,7 +74,7 @@ export function selectCategoryOpportunities({ allOpportunities, categoryIds, typ
       scored.sort((a, b) => b.opportunity.portfolioValue - a.opportunity.portfolioValue);
       break;
     default:
-      scored.sort((a, b) => (b.fit?.percent ?? -1) - (a.fit?.percent ?? -1) || b.matchCount - a.matchCount || (b.score?.totalScore ?? 0) - (a.score?.totalScore ?? 0));
+      scored.sort((a, b) => Number(!!a.age?.failed) - Number(!!b.age?.failed) || (b.fit?.percent ?? -1) - (a.fit?.percent ?? -1) || b.matchCount - a.matchCount || (b.score?.totalScore ?? 0) - (a.score?.totalScore ?? 0));
   }
 
   return scored;

@@ -147,6 +147,7 @@ export interface EligibilityJudgement {
 
 // --- Opportunity ---
 export interface Opportunity {
+  interestSimilarities?: Record<string, number>;
   id: string;
   dataOrigin?: "crawling";
   lastSeenAt?: string;
