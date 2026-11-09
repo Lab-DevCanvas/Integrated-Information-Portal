@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AuthError, getAccount, handleSessionStorage, restoreSession, signOut, subscribeAuth, type Account } from "@/lib/auth/client";
 import { connectWorkspace, disconnectWorkspace } from "@/lib/account/workspace";
-type AuthState = { account: Account | null; loading: boolean; error: string | null; reload: () => Promise<void>; logout: () => Promise<void> };
+type AuthState = { account: Account | null; loading: boolean; error: string | null; reload: () => Promise<void>; updateAccount: (value: Account) => void; logout: () => Promise<void> };
 const Context = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -39,6 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { window.removeEventListener("opfinde-login-required", requestLogin); active = false; unsubscribe(); window.removeEventListener("storage", handleSessionStorage); };
   }, [reload, router]);
   async function logout() { try { await signOut(); } catch (err) { setError((err as Error).message); } }
-  return <Context.Provider value={{ account, loading, error, reload, logout }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ account, loading, error, reload, logout, updateAccount: value => setAccount(current => current?.account_id === value.account_id ? value : current) }}>{children}</Context.Provider>;
 }
 export function useAuth() { const value = useContext(Context); if (!value) throw new Error("AuthProvider is required"); return value; }
