@@ -19,7 +19,7 @@ export function NotificationFeed({ entries, mode = "teaser", teaserCount = 4, is
       <EmptyState
         icon={Bell}
         title="아직 새로운 기회가 없어요"
-        description="프로필 정보를 조금 더 채워주시면 더 정확하게 찾아드릴게요."
+        description="최근 공고 중 북마크했거나 나와의 일치도가 80% 이상인 공고가 있으면 알려드릴게요."
       />
     );
   }

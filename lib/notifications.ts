@@ -5,7 +5,7 @@ import type { Opportunity, UserProfile } from "./types";
 export type NotificationEntry = PresentedOpportunity;
 
 const NEW_WINDOW_DAYS = 14;
-const MIN_SCORE = 50;
+const MIN_SCORE = 80;
 
 function relevantEntriesWithin(
   windowDays: number,
@@ -13,10 +13,11 @@ function relevantEntriesWithin(
   savedIds: string[],
   opportunities: Opportunity[],
 ): NotificationEntry[] {
+  const saved = new Set(savedIds);
   return opportunities
     .filter((o) => daysSince(o.createdAt) <= windowDays)
     .map((opportunity) => presentOpportunity(opportunity, profile, savedIds))
-    .filter((entry) => (entry.percent ?? 0) >= MIN_SCORE)
+    .filter((entry) => saved.has(entry.opportunity.id) || (entry.percent ?? 0) >= MIN_SCORE)
     .sort((a, b) => new Date(b.opportunity.createdAt).getTime() - new Date(a.opportunity.createdAt).getTime());
 }
 

@@ -23,7 +23,7 @@ export default function NotificationsPage() {
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">새롭게 발견된 기회</h1>
       </div>
       <p className="text-sm text-slate-500 dark:text-slate-400">
-        최근 14일 내 등록되고 프로필과 잘 맞는 기회들을 모았어요.
+        최근 14일 내 등록된 공고 중 북마크했거나 나와의 일치도가 80% 이상인 공고만 알려드려요.
       </p>
       <NotificationFeed entries={entries} mode="full" isLoading={isLoading} />
     </div>

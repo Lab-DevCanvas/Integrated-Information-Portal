@@ -117,7 +117,10 @@ export function ProfileMenu() {
 
           <div className="max-h-80 overflow-y-auto p-2">
             {tab === "알림" && (
-              <NotificationFeed entries={newEntries.slice(0, 5)} mode="teaser" teaserCount={5} isLoading={isLoading} />
+              <>
+                <p className="px-2 py-2 text-xs text-slate-500 dark:text-slate-400">최근 14일 공고 중 북마크 또는 일치도 80% 이상만 알려드려요.</p>
+                <NotificationFeed entries={newEntries.slice(0, 5)} mode="teaser" teaserCount={5} isLoading={isLoading} />
+              </>
             )}
 
             {tab === "저장" &&

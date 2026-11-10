@@ -23,7 +23,9 @@ export function NotificationItem({ entry }: { entry: NotificationEntry }) {
         </div>
         <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{matchReason}</p>
       </div>
-      <span className="shrink-0 text-xs font-bold text-indigo-600 dark:text-indigo-400">{fit?.label ?? "적합도"} {percent}%</span>
+      {percent !== undefined && (
+        <span className="shrink-0 text-xs font-bold text-indigo-600 dark:text-indigo-400">{fit?.label ?? "적합도"} {percent}%</span>
+      )}
     </Link>
   );
 }
