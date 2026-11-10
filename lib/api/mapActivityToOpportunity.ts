@@ -1,3 +1,4 @@
+import { getCollectorSourceLabel } from "./collectorSources";
 import type { ActivityDTO } from "./crawlingClient";
 import type { CategoryId, Opportunity, OpportunityType, SubCategoryId } from "../types";
 
@@ -5,20 +6,6 @@ import type { CategoryId, Opportunity, OpportunityType, SubCategoryId } from "..
  * Missing dates and regions remain empty; dataOrigin makes eligibility unknown.
  * Fixed score inputs below are local compatibility defaults, not backend facts.
  */
-
-const SOURCE_LABELS: Record<string, string> = {
-  bokjiro: "복지로",
-  youthcenter: "온통청년",
-  linkareer: "링커리어",
-  linkareer_activity: "링커리어",
-  allcon: "올콘",
-  campuspick: "캠퍼스픽",
-  campuspick_activity: "캠퍼스픽",
-  data_go_kr: "공공데이터포털",
-  saramin: "사람인",
-  jobkorea: "잡코리아",
-  allforyoung: "요즘것들",
-};
 
 interface Taxonomy {
   opportunityType: OpportunityType;
@@ -63,7 +50,7 @@ export function mapActivityToOpportunity(activity: ActivityDTO): Opportunity {
     periodStatus: activity.period_status,
     rawPeriodText: activity.raw_period_text ?? undefined,
     title: activity.title?.trim() || "(제목 미상)",
-    organizer: SOURCE_LABELS[activity.source] ?? activity.source,
+    organizer: getCollectorSourceLabel(activity.source),
     opportunityType: taxonomy.opportunityType,
     categoryId: taxonomy.categoryId,
     subCategoryId: taxonomy.subCategoryId,
@@ -86,7 +73,7 @@ export function mapActivityToOpportunity(activity: ActivityDTO): Opportunity {
     // the pack rather than at either extreme.
     competitionLevel: 3,
     portfolioValue: 3,
-    tags: [SOURCE_LABELS[activity.source] ?? activity.source],
+    tags: [getCollectorSourceLabel(activity.source)],
     // PLACEHOLDER — team requirement is not crawled.
     teamRequired: false,
     refUrl: activity.detail_url && /^https?:\/\//i.test(activity.detail_url) ? activity.detail_url : undefined,

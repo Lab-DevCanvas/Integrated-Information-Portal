@@ -13,14 +13,16 @@ interface CategorySelection {
   profile: UserProfile | null;
   savedIds: string[];
   eligibleOnly: boolean;
+  includeExpired?: boolean;
   sortMode: string;
 }
 
 /** Apply filters and global ranking before slicing a page. Does not mutate source items. */
-export function selectCategoryOpportunities({ allOpportunities, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, keyword, profile, savedIds, eligibleOnly, sortMode }: CategorySelection) {
+export function selectCategoryOpportunities({ allOpportunities, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, keyword, profile, savedIds, eligibleOnly, includeExpired = false, sortMode }: CategorySelection) {
   const kw = keyword.trim().toLowerCase();
 
   const base = allOpportunities.filter((o) => {
+    if (!includeExpired && (o.periodStatus === "expired" || (!o.isAlwaysOpen && daysUntil(o.applyEndDate) < 0))) return false;
     if (categoryIds.length > 0 && !categoryIds.includes(o.categoryId)) return false;
     if (typeIds.length > 0 && !typeIds.includes(o.opportunityType)) return false;
     if (regions.length > 0 && !o.region.includes("전국") && !regions.some((r) => o.region.includes(r))) return false;

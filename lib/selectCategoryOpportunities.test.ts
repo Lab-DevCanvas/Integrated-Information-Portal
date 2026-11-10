@@ -76,3 +76,19 @@ it("uses evidence across the mixed feed instead of scoring default metadata", ()
   expect(run(["디자인"])[0].opportunity.id).toBe(activity.id);
   expect(run([]).every(row => row.fit === undefined)).toBe(true);
 });
+
+it("hides closed items by default and includes them only when requested", () => {
+  const allOpportunities = [
+    { ...opportunity("expired-status"), periodStatus: "expired" },
+    { ...opportunity("past-date"), applyEndDate: "2000-01-01" },
+    { ...opportunity("ongoing"), periodStatus: "ongoing", applyEndDate: "2099-01-01" },
+    { ...opportunity("upcoming"), periodStatus: "upcoming" },
+    { ...opportunity("always"), isAlwaysOpen: true, applyEndDate: "2000-01-01" },
+    opportunity("unknown"),
+  ];
+  expect(selectCategoryOpportunities({ ...defaults, allOpportunities }).map(x => x.opportunity.id))
+    .toEqual(["ongoing", "upcoming", "always", "unknown"]);
+  expect(selectCategoryOpportunities({ ...defaults, allOpportunities, includeExpired: true })).toHaveLength(6);
+  expect(selectCategoryOpportunities({ ...defaults, allOpportunities, includeExpired: true, keyword: "expired" }).map(x => x.opportunity.id))
+    .toEqual(["expired-status"]);
+});

@@ -11,7 +11,7 @@ import { EXPERIENCE_LEVELS, REGIONS } from "@/lib/constants";
 import { useCategoryResults } from "@/lib/hooks/useCategoryResults";
 import { useCategoryOpportunities } from "@/lib/hooks/useCategoryOpportunities";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { COLLECTOR_SOURCES } from "@/lib/api/collectorSources";
+import { COLLECTOR_SOURCES, COLLECTOR_SOURCE_LABELS } from "@/lib/api/collectorSources";
 import { useAppStore } from "@/lib/store/useAppStore";
 import type { CategoryId, ExperienceLevel, RegionCode } from "@/lib/types";
 
@@ -48,6 +48,7 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
     next.set(key, value);
     next.delete("page");
     next.delete("types");
+    next.delete("period_status");
     router.push(`${pathname}?${next.toString()}`, { scroll: false });
   }
   function arraySetter<T extends string>(key: string, value: T[]) {
@@ -69,8 +70,8 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
   const sortMode = (query.get("sort") ?? "score") as SortMode;
   const setSortMode = (value: SortMode) => updateQuery("sort", value);
   const source = query.get("source") ?? "";
-  const periodStatus = query.get("period_status") ?? "";
-  const { items: allOpportunities, loading: isLoading, loadingMore, total, error, backgroundError, retry } = useCategoryOpportunities(source, periodStatus);
+  const includeExpired = query.get("include_expired") === "true";
+  const { items: allOpportunities, loading: isLoading, loadingMore, error, backgroundError, retry } = useCategoryOpportunities(source, "");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function toggleCategory(id: CategoryId) {
@@ -84,21 +85,21 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
   }
 
   const advancedActive =
-    regions.length > 0 || experienceLevels.length > 0 || deadlineWindow !== "all" || eligibleOnly;
+    regions.length > 0 || experienceLevels.length > 0 || deadlineWindow !== "all" || eligibleOnly || includeExpired;
   const anyFilterActive =
     categoryIds.length !== initialCategoryIds.length ||
     categoryIds.some((c) => !initialCategoryIds.includes(c)) ||
     typeIds.length > 0 ||
     keyword.trim() !== "" ||
-    advancedActive || source !== "" || periodStatus !== "";
+    advancedActive || source !== "";
 
   function resetFilters() {
     router.push(pathname, { scroll: false });
   }
 
-  const items = useCategoryResults({ allOpportunities, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, keyword, profile, savedIds, eligibleOnly, sortMode });
+  const items = useCategoryResults({ allOpportunities, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, keyword, profile, savedIds, eligibleOnly, includeExpired, sortMode });
 
-  const listKey = JSON.stringify([pathname, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, eligibleOnly, keyword, sortMode, source, periodStatus]);
+  const listKey = JSON.stringify([pathname, categoryIds, typeIds, regions, experienceLevels, deadlineWindow, eligibleOnly, keyword, sortMode, source, includeExpired]);
 
   return (
     <div className="space-y-6">
@@ -143,30 +144,25 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
           )}
         </div>
 
-        <div>
-          <p className="mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500">카테고리</p>
-          <div className="flex flex-wrap gap-2">
-            <Chip selected={categoryIds.length === 0} onClick={() => setCategoryIds([])}>
-              전체
-            </Chip>
-            {CATEGORIES.map((c) => (
-              <Chip key={c.id} selected={categoryIds.includes(c.id)} onClick={() => toggleCategory(c.id)}>
-                {c.label}
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+          <div>
+            <p className="mb-2 text-xs font-semibold text-slate-400 dark:text-slate-500">카테고리</p>
+            <div className="flex flex-wrap gap-2">
+              <Chip selected={categoryIds.length === 0} onClick={() => setCategoryIds([])}>
+                전체
               </Chip>
-            ))}
+              {CATEGORIES.map((c) => (
+                <Chip key={c.id} selected={categoryIds.includes(c.id)} onClick={() => toggleCategory(c.id)}>
+                  {c.label}
+                </Chip>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-slate-600 dark:text-slate-300">출처
             <select aria-label="출처" value={source} onChange={(e) => updateQuery("source", e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
               <option value="">전체 출처</option>
-              {COLLECTOR_SOURCES.map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>
-          </label>
-          <label className="text-sm text-slate-600 dark:text-slate-300">모집 상태
-            <select aria-label="모집 상태" value={periodStatus} onChange={(e) => updateQuery("period_status", e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
-              <option value="">전체 상태</option><option value="ongoing">모집 중</option><option value="upcoming">모집 예정</option><option value="always_open">상시 모집</option><option value="unknown">기간 미상</option><option value="expired">마감</option>
+              {COLLECTOR_SOURCES.map((value) => <option key={value} value={value}>{COLLECTOR_SOURCE_LABELS[value]}</option>)}
             </select>
           </label>
         </div>
@@ -228,6 +224,16 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
               <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                 <input
                   type="checkbox"
+                  checked={includeExpired}
+                  onChange={(e) => updateQuery("include_expired", String(e.target.checked))}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800"
+                />
+                마감된 항목 포함
+              </label>
+
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <input
+                  type="checkbox"
                   checked={eligibleOnly}
                   onChange={(e) => setEligibleOnly(e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800"
@@ -240,7 +246,7 @@ export function CategoryExplorer({ initialCategoryIds = EMPTY_FILTER }: Props) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p role="status" className="text-sm font-semibold text-slate-700 dark:text-slate-300">{isLoading ? "불러오는 중…" : error ? "조회 실패" : `전체 ${total.toLocaleString()}건`}</p>
+        <p role="status" className="text-sm font-semibold text-slate-700 dark:text-slate-300">{isLoading ? "불러오는 중…" : error ? "조회 실패" : `${loadingMore || backgroundError ? "불러온 결과" : "전체"} ${items.length.toLocaleString()}건`}</p>
         <select
           aria-label="정렬"
           value={sortMode}
