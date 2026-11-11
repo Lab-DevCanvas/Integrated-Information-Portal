@@ -2,7 +2,7 @@
 
 import { useState, type Ref } from "react";
 import Link from "next/link";
-import { LoaderCircle, RotateCcw, Check, Sparkles, Columns3, Plus } from "lucide-react";
+import { LoaderCircle, RotateCcw, Check, Sparkles, Columns3, Plus, Pin } from "lucide-react";
 import { searchStages, type SearchStage } from "@/lib/api/aiSearch";
 import { ChatComparisonTable } from "./ChatComparisonTable";
 import type { ChatMessage } from "@/lib/types";
@@ -17,11 +17,12 @@ type Props = {
   stages?: SearchStage[];
   onCancel?: () => void;
   onRetry?: () => void;
+  onTogglePin?: () => void;
   onCompare?: (ids: string[]) => void;
   compareDisabled?: boolean;
 };
 
-export function ChatMessageBubble({ message, anchorRef, pending = false, stages = [], onCancel, onRetry, onCompare, compareDisabled }: Props) {
+export function ChatMessageBubble({ message, anchorRef, pending = false, stages = [], onCancel, onRetry, onTogglePin, onCompare, compareDisabled }: Props) {
   const result = message?.aiResult;
   const [excludedByMessage, setExcludedByMessage] = useState<Record<string, string[]>>({});
   const selectionKey = message?.id ?? "pending";
@@ -36,7 +37,7 @@ export function ChatMessageBubble({ message, anchorRef, pending = false, stages 
   const isError = message?.error;
   const actionClass = "inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-current/20 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:bg-white/10";
   const labels = { eligible: "확인된 조건 충족", ineligible: "일부 자격 불충족", unknown: "자격 확인 필요" };
-  return <div ref={anchorRef} className={isUser ? "ml-auto max-w-[85%]" : "w-full min-w-0 max-w-3xl space-y-4"}>
+  return <div id={message ? `chat-message-${message.id}` : undefined} tabIndex={message ? -1 : undefined} ref={anchorRef} className={isUser ? "ml-auto max-w-[85%]" : "w-full min-w-0 max-w-3xl space-y-4"}>
     <div className={`rounded-2xl px-4 py-3 text-sm transition-colors duration-300 motion-reduce:transition-none ${isUser ? "bg-indigo-600 text-white" : isError ? "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
       {pending ? (
         <div className="space-y-3" aria-busy="true">
@@ -55,6 +56,11 @@ export function ChatMessageBubble({ message, anchorRef, pending = false, stages 
         </div>
       ) : (
         <div key={message?.id} className="chat-message-enter flex flex-wrap items-center gap-x-3 gap-y-2">
+          {message && onTogglePin && <button type="button" onClick={onTogglePin}
+            aria-label={message.isPinned ? "메시지 중요표시 해제" : "메시지 중요표시"} aria-pressed={Boolean(message.isPinned)}
+            title={message.isPinned ? "중요표시 해제" : "중요표시"} className={actionClass}>
+            <Pin aria-hidden className={`h-4 w-4 ${message.isPinned ? "fill-current" : ""}`} />
+          </button>}
           {Boolean(result?.results.length) && !isError && <div className="w-full space-y-1">
             <p className="text-base font-bold text-slate-900 dark:text-white">{isComparison ? `${result!.results.length}개 공고를 비교했어요` : `관련 공고 ${result!.results.length}개를 찾았어요`}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">{isComparison ? "같은 기준으로 살펴보고 나에게 맞는 기회를 골라보세요." : "각 공고를 추천하는 이유와 지원 전 확인할 내용을 정리했어요."}</p>

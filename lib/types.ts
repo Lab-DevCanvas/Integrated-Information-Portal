@@ -236,6 +236,7 @@ export interface SearchResultItem {
 
 // --- AI chat ---
 export interface ChatMessage {
+  isPinned?: boolean;
   aiResult?: AISearchResult;
   error?: boolean;
   errorCode?: string;
@@ -251,6 +252,7 @@ export interface ChatMessage {
 }
 
 export interface ChatConversation {
+  isPinned?: boolean;
   id: string;
   title: string;
   messages: ChatMessage[];

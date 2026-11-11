@@ -61,3 +61,32 @@ it("keeps progress per conversation and ignores it after cancellation", async ()
   await pending;
   expect(useAppStore.getState().pendingProgress[id]).toBeUndefined();
 });
+
+it("limits conversation pins to five and allows unpinning", () => {
+  useAppStore.setState({ conversations: Array.from({ length: 6 }, (_, i) => ({ id: `c${i}`, title: "대화", messages: [], updatedAt: "" })) });
+  for (let i = 0; i < 6; i++) useAppStore.getState().toggleConversationPin(`c${i}`);
+  expect(useAppStore.getState().conversations.filter((c) => c.isPinned)).toHaveLength(5);
+  useAppStore.getState().toggleConversationPin("c0");
+  useAppStore.getState().toggleConversationPin("c5");
+  expect(useAppStore.getState().conversations.find((c) => c.id === "c5")?.isPinned).toBe(true);
+});
+
+it("pins questions and answers independently within their conversation", () => {
+  const messages = [{ id: "q", role: "user" as const, text: "질문", createdAt: "" }, { id: "a", role: "assistant" as const, text: "답변", createdAt: "" }];
+  useAppStore.setState({ conversations: ["one", "two"].map((id) => ({ id, title: id, messages, updatedAt: "" })) });
+  useAppStore.getState().toggleMessagePin("one", "q");
+  useAppStore.getState().toggleMessagePin("one", "a");
+  expect(useAppStore.getState().conversations[0].messages.every((m) => m.isPinned)).toBe(true);
+  expect(useAppStore.getState().conversations[1].messages.some((m) => m.isPinned)).toBe(false);
+  useAppStore.getState().toggleMessagePin("one", "q");
+  expect(useAppStore.getState().conversations[0].messages[0].isPinned).toBe(false);
+});
+
+it("keeps an old pinned conversation when new chats reach the history limit", async () => {
+  useAppStore.setState({ conversations: Array.from({ length: 20 }, (_, i) => ({ id: `c${i}`, title: "대화", messages: [], updatedAt: "", isPinned: i === 19 })) });
+  search.mockResolvedValue({ answer: "완료", results: [] });
+  await useAppStore.getState().sendMessage("새 질문");
+  expect(useAppStore.getState().conversations).toHaveLength(20);
+  expect(useAppStore.getState().conversations.some((c) => c.id === "c19" && c.isPinned)).toBe(true);
+  expect(useAppStore.getState().conversations.some((c) => c.id === "c18")).toBe(false);
+});

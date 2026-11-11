@@ -33,6 +33,8 @@ interface AppState {
 
   conversations: ChatConversation[];
   activeConversationId: string | null;
+  toggleConversationPin: (id: string) => void;
+  toggleMessagePin: (conversationId: string, messageId: string) => void;
   startNewConversation: () => void;
   setActiveConversation: (id: string) => void;
   sendMessage: (text: string, comparisonTargetIds?: string[]) => Promise<void>;
@@ -103,6 +105,15 @@ export const useAppStore = create<AppState>()(
 
       conversations: [],
       activeConversationId: null,
+      toggleConversationPin: (id) => set((s) => {
+        const conversation = s.conversations.find((c) => c.id === id);
+        if (!conversation || (!conversation.isPinned && s.conversations.filter((c) => c.isPinned).length >= 5)) return s;
+        return { conversations: s.conversations.map((c) => c.id === id ? { ...c, isPinned: !c.isPinned } : c) };
+      }),
+      toggleMessagePin: (conversationId, messageId) => set((s) => ({
+        conversations: s.conversations.map((c) => c.id === conversationId
+          ? { ...c, messages: c.messages.map((m) => m.id === messageId ? { ...m, isPinned: !m.isPinned } : m) } : c),
+      })),
       startNewConversation: () => set({ activeConversationId: null }),
       setActiveConversation: (id) => set({ activeConversationId: id }),
       pendingChats: {},
@@ -134,7 +145,7 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ activeConversationId: id, pendingChats: { ...s.pendingChats, [id]: controller },
           pendingProgress: { ...s.pendingProgress, [id]: [] },
           conversations: [{ ...conversation, messages: [...previous, userMsg], updatedAt: now },
-            ...s.conversations.filter((c) => c.id !== id)].slice(0, MAX_CONVERSATIONS) }));
+            ...s.conversations.filter((c) => c.id !== id)].sort((a, b) => Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned)) || b.updatedAt.localeCompare(a.updatedAt)).slice(0, MAX_CONVERSATIONS) }));
         let assistant: ChatMessage;
         try {
           const result = await searchAI(trimmed, previous, state.profile, controller.signal, (stage) => {

@@ -10,6 +10,8 @@ import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatSidebar } from "./ChatSidebar";
 
 export function ChatPanel() {
+  const toggleConversationPin = useAppStore((s) => s.toggleConversationPin);
+  const toggleMessagePin = useAppStore((s) => s.toggleMessagePin);
   const conversations = useAppStore((s) => s.conversations);
   const activeConversationId = useAppStore((s) => s.activeConversationId);
   const startNewConversation = useAppStore((s) => s.startNewConversation);
@@ -50,6 +52,15 @@ export function ChatPanel() {
     setSidebarOpen(false);
   }
 
+  function handleSelectMessage(id: string) {
+    setSidebarOpen(false);
+    // Close the modal before moving focus back into the message list.
+    drawerRef.current?.close();
+    const target = document.getElementById(`chat-message-${id}`);
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+  }
+
   function handleNewChat() {
     startNewConversation();
     setSidebarOpen(false);
@@ -63,6 +74,8 @@ export function ChatPanel() {
           conversations={conversations}
           activeConversationId={activeConversationId}
           onSelect={handleSelect}
+          onTogglePin={toggleConversationPin}
+          onSelectMessage={handleSelectMessage}
           onNewChat={handleNewChat}
         />
       </aside>
@@ -80,6 +93,8 @@ export function ChatPanel() {
             conversations={conversations}
             activeConversationId={activeConversationId}
             onSelect={handleSelect}
+            onTogglePin={toggleConversationPin}
+            onSelectMessage={handleSelectMessage}
             onNewChat={handleNewChat}
             onClose={() => setSidebarOpen(false)}
           />
@@ -129,6 +144,7 @@ export function ChatPanel() {
               <ChatMessageBubble
                 key={m.role === "assistant" ? `reply-${messages[index - 1]?.id ?? m.id}` : m.id}
                 message={m}
+                onTogglePin={() => toggleMessagePin(activeConversation.id, m.id)}
                 compareDisabled={isPending}
                 onCompare={(ids) => { void sendMessage("이 공고들 비교해줘", ids); }}
                 anchorRef={m.role === "assistant" && index === messages.length - 1 ? latestReplyRef : undefined}
